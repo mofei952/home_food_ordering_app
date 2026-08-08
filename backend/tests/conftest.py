@@ -68,6 +68,7 @@ def app(test_engine: AsyncEngine, clock: MutableClock) -> FastAPI:
         settings=Settings(
             environment="development",
             database_url="sqlite+aiosqlite://",
+            image_storage="memory",
         ),
         clock=clock,
     )

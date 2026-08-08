@@ -238,4 +238,49 @@ describe("DishForm", () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
     expect(onSubmit.mock.calls[0][0].imageKey).toBeNull();
   });
+
+  it("keeps previous imageKey on edit when replacement upload fails", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            detail: "图片上传失败",
+            code: "image_upload_failed",
+          }),
+          { status: 503, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+
+    render(
+      <DishForm
+        members={members}
+        initial={{
+          name: "番茄炒蛋",
+          category: "荤菜",
+          cookIds: ["m1"],
+          ingredients: ["番茄", "鸡蛋"],
+          imageKey: "hh/existing.webp",
+          imageUrl: "https://example.test/hh/existing.webp",
+        }}
+        onSubmit={onSubmit}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("菜品图片"), {
+      target: {
+        files: [
+          new File([new Uint8Array(4)], "dish.jpg", { type: "image/jpeg" }),
+        ],
+      },
+    });
+
+    await screen.findByText("图片上传失败，你仍可先保存菜品");
+    fireEvent.submit(screen.getByRole("form", { name: "菜品表单" }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+    expect(onSubmit.mock.calls[0][0].imageKey).toBe("hh/existing.webp");
+  });
 });

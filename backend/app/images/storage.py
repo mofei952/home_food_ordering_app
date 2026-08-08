@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import secrets
 from typing import Protocol
 from urllib.parse import quote
@@ -10,6 +11,8 @@ from botocore.exceptions import BotoCoreError, ClientError
 
 from app.config import Settings
 from app.errors import ApiError
+
+logger = logging.getLogger(__name__)
 
 
 class Storage(Protocol):
@@ -82,9 +85,45 @@ class S3Storage:
             ) from error
 
 
+class StorageConfigError(RuntimeError):
+    """Raised when image storage settings are incomplete or invalid."""
+
+
+def _allow_memory_without_s3(settings: Settings) -> bool:
+    # Explicit IMAGE_STORAGE=memory is preferred; this path is only a
+    # development/test convenience with a warning. Production must configure S3.
+    return settings.environment in {"development", "test"}
+
+
 def build_storage(settings: Settings) -> Storage:
-    if not settings.s3_endpoint_url:
+    backend = settings.image_storage.strip().lower()
+    if backend == "memory":
+        logger.warning(
+            "Using InMemoryStorage (IMAGE_STORAGE=memory); "
+            "images are not persisted across processes"
+        )
         return InMemoryStorage()
+
+    if backend != "s3":
+        raise StorageConfigError(
+            f"Unknown IMAGE_STORAGE={settings.image_storage!r}; "
+            "expected 's3' or 'memory'"
+        )
+
+    if not settings.s3_endpoint_url:
+        if _allow_memory_without_s3(settings):
+            logger.warning(
+                "S3_ENDPOINT_URL is unset; falling back to InMemoryStorage "
+                "(allowed only for development/test). "
+                "Set IMAGE_STORAGE=memory explicitly, or configure S3_*."
+            )
+            return InMemoryStorage()
+        raise StorageConfigError(
+            "S3_ENDPOINT_URL is required when IMAGE_STORAGE=s3 in "
+            f"environment={settings.environment!r}. "
+            "Configure S3_* settings, or set IMAGE_STORAGE=memory "
+            "only for non-production local use."
+        )
 
     client = boto3.client(
         "s3",

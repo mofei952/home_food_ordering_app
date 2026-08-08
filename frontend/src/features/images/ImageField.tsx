@@ -46,9 +46,10 @@ export function ImageField({
           ? caught.message
           : "图片上传失败，你仍可先保存菜品";
       setLocalError(message);
+      // Keep any previously saved imageKey/preview; only clearImage() removes them.
       onChange({
-        imageKey: null,
-        previewUrl: null,
+        imageKey: value,
+        previewUrl,
         error: message,
       });
     } finally {

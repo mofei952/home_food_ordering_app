@@ -26,6 +26,17 @@ services:
       timeout: 5s
       retries: 5
       start_period: 5s
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin &&
+      mc mb --ignore-existing local/family-menu
+      "
+    restart: "no"
 volumes:
   postgres_data:
   minio_data:

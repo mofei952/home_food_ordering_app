@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+asyncpg://family_menu:family_menu@localhost:5432/family_menu"
     )
+    # "s3" (default) requires S3_*; "memory" is for pytest / explicit local use.
+    image_storage: str = "s3"
     s3_endpoint_url: str | None = None
     s3_access_key: str = "minioadmin"
     s3_secret_key: str = "minioadmin"

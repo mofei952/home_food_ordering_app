@@ -82,4 +82,43 @@ describe("ImageField", () => {
       }),
     );
   });
+
+  it("keeps previous imageKey when replacement upload fails", async () => {
+    const onChange = vi.fn();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            detail: "图片上传失败",
+            code: "image_upload_failed",
+          }),
+          { status: 503, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+
+    render(
+      <ImageField
+        value="hh/existing.webp"
+        previewUrl="https://example.test/hh/existing.webp"
+        onChange={onChange}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("菜品图片"), {
+      target: {
+        files: [
+          new File([new Uint8Array(4)], "dish.jpg", { type: "image/jpeg" }),
+        ],
+      },
+    });
+
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith({
+        imageKey: "hh/existing.webp",
+        previewUrl: "https://example.test/hh/existing.webp",
+        error: "图片上传失败，你仍可先保存菜品",
+      }),
+    );
+  });
 });

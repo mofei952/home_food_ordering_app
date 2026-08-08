@@ -53,7 +53,6 @@ export function DishForm({
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     initial?.imageUrl ?? null,
   );
-  const [imageError, setImageError] = useState<string>();
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
 
@@ -91,7 +90,8 @@ export function DishForm({
       category,
       cookIds,
       ingredients,
-      imageKey: imageError ? null : imageKey,
+      // imageKey is cleared only via ImageField clear; failed re-upload keeps prior key.
+      imageKey,
     };
 
     setSubmitting(true);
@@ -167,7 +167,6 @@ export function DishForm({
         onChange={(next) => {
           setImageKey(next.imageKey);
           setPreviewUrl(next.previewUrl);
-          setImageError(next.error);
         }}
       />
       <div>

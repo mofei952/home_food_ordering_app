@@ -5,6 +5,14 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.config import Settings
+from app.images.storage import (
+    InMemoryStorage,
+    S3Storage,
+    StorageConfigError,
+    build_storage,
+)
+
 
 def _create_household(
     client: TestClient,
@@ -125,3 +133,43 @@ def test_upload_requires_authentication(app: FastAPI) -> None:
             files={"file": ("dish.webp", b"valid-image", "image/webp")},
         )
     assert response.status_code == 401
+
+
+def test_build_storage_uses_memory_when_explicitly_configured() -> None:
+    storage = build_storage(
+        Settings(environment="production", image_storage="memory")
+    )
+    assert isinstance(storage, InMemoryStorage)
+
+
+def test_build_storage_requires_s3_in_production_without_endpoint() -> None:
+    with pytest.raises(StorageConfigError, match="S3_ENDPOINT_URL is required"):
+        build_storage(
+            Settings(
+                environment="production",
+                image_storage="s3",
+                s3_endpoint_url=None,
+            )
+        )
+
+
+def test_build_storage_uses_s3_when_endpoint_configured() -> None:
+    storage = build_storage(
+        Settings(
+            environment="production",
+            image_storage="s3",
+            s3_endpoint_url="http://localhost:9000",
+        )
+    )
+    assert isinstance(storage, S3Storage)
+
+
+def test_build_storage_falls_back_in_development_without_endpoint() -> None:
+    storage = build_storage(
+        Settings(
+            environment="development",
+            image_storage="s3",
+            s3_endpoint_url=None,
+        )
+    )
+    assert isinstance(storage, InMemoryStorage)
