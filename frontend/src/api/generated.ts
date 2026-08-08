@@ -214,6 +214,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/recommendations/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Search */
+        post: operations["post_search_api_recommendations_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recommendations/random": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Random */
+        post: operations["post_random_api_recommendations_random_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -479,6 +513,66 @@ export interface components {
             /** Requested By */
             requested_by: components["schemas"]["RequestedBySummary"][];
         };
+        /** RandomRequest */
+        RandomRequest: {
+            /** Cook Ids */
+            cook_ids?: string[];
+            /** Categories */
+            categories?: ("荤菜" | "素菜" | "主食" | "汤" | "其他")[];
+            /** Available Ingredient Ids */
+            available_ingredient_ids?: string[];
+            /** Meal Slot Id */
+            meal_slot_id?: string | null;
+            /** Seed */
+            seed?: number | null;
+        };
+        /** RandomResponse */
+        RandomResponse: {
+            dish: components["schemas"]["RecommendedDishRead"];
+            /** Meal Slot Id */
+            meal_slot_id: string | null;
+        };
+        /** RecommendationFilters */
+        RecommendationFilters: {
+            /** Cook Ids */
+            cook_ids?: string[];
+            /** Categories */
+            categories?: ("荤菜" | "素菜" | "主食" | "汤" | "其他")[];
+            /** Available Ingredient Ids */
+            available_ingredient_ids?: string[];
+            /** Meal Slot Id */
+            meal_slot_id?: string | null;
+        };
+        /** RecommendedDishRead */
+        RecommendedDishRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "荤菜" | "素菜" | "主食" | "汤" | "其他";
+            /** Cooks */
+            cooks: components["schemas"]["CookSummary"][];
+            /** Ingredients */
+            ingredients: components["schemas"]["IngredientSummary"][];
+            /** Missing Ingredients */
+            missing_ingredients: components["schemas"]["IngredientSummary"][];
+            /**
+             * Visibility
+             * @enum {string}
+             */
+            visibility: "ready" | "one_missing";
+            /** Last Eaten On */
+            last_eaten_on: string | null;
+            /** Weight */
+            weight: string;
+        };
         /** RequestedBySummary */
         RequestedBySummary: {
             /**
@@ -498,6 +592,15 @@ export interface components {
         RotateInviteResponse: {
             /** Invite Code */
             invite_code: string;
+        };
+        /** SearchResponse */
+        SearchResponse: {
+            /** Ready */
+            ready: components["schemas"]["RecommendedDishRead"][];
+            /** One Missing */
+            one_missing: components["schemas"]["RecommendedDishRead"][];
+            /** Meal Slot Id */
+            meal_slot_id: string | null;
         };
         /** SessionResponse */
         SessionResponse: {
@@ -1071,6 +1174,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MealSlotRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_search_api_recommendations_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendationFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_random_api_recommendations_random_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RandomRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RandomResponse"];
                 };
             };
             /** @description Validation Error */

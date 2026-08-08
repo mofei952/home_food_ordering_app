@@ -31,6 +31,7 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code: string,
     readonly currentVersion?: number,
+    readonly relaxableFilters?: string[],
   ) {
     super(message);
   }
@@ -51,7 +52,18 @@ export class ApiError extends Error {
       typeof body.current_version === "number"
         ? body.current_version
         : undefined;
-    return new ApiError(message, response.status, code, currentVersion);
+    const relaxableFilters = Array.isArray(body.relaxable_filters)
+      ? body.relaxable_filters.filter(
+          (item): item is string => typeof item === "string",
+        )
+      : undefined;
+    return new ApiError(
+      message,
+      response.status,
+      code,
+      currentVersion,
+      relaxableFilters,
+    );
   }
 }
 

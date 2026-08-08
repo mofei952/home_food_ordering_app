@@ -731,6 +731,82 @@
         }
       }
     },
+    "/api/recommendations/search": {
+      "post": {
+        "summary": "Post Search",
+        "operationId": "post_search_api_recommendations_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recommendations/random": {
+      "post": {
+        "summary": "Post Random",
+        "operationId": "post_random_api_recommendations_random_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RandomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RandomResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health",
@@ -1413,6 +1489,221 @@
         ],
         "title": "MergedMealRequestRead"
       },
+      "RandomRequest": {
+        "properties": {
+          "cook_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cook Ids"
+          },
+          "categories": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "荤菜",
+                "素菜",
+                "主食",
+                "汤",
+                "其他"
+              ]
+            },
+            "type": "array",
+            "title": "Categories"
+          },
+          "available_ingredient_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Available Ingredient Ids"
+          },
+          "meal_slot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meal Slot Id"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed"
+          }
+        },
+        "type": "object",
+        "title": "RandomRequest"
+      },
+      "RandomResponse": {
+        "properties": {
+          "dish": {
+            "$ref": "#/components/schemas/RecommendedDishRead"
+          },
+          "meal_slot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meal Slot Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dish",
+          "meal_slot_id"
+        ],
+        "title": "RandomResponse"
+      },
+      "RecommendationFilters": {
+        "properties": {
+          "cook_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cook Ids"
+          },
+          "categories": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "荤菜",
+                "素菜",
+                "主食",
+                "汤",
+                "其他"
+              ]
+            },
+            "type": "array",
+            "title": "Categories"
+          },
+          "available_ingredient_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Available Ingredient Ids"
+          },
+          "meal_slot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meal Slot Id"
+          }
+        },
+        "type": "object",
+        "title": "RecommendationFilters"
+      },
+      "RecommendedDishRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "荤菜",
+              "素菜",
+              "主食",
+              "汤",
+              "其他"
+            ],
+            "title": "Category"
+          },
+          "cooks": {
+            "items": {
+              "$ref": "#/components/schemas/CookSummary"
+            },
+            "type": "array",
+            "title": "Cooks"
+          },
+          "ingredients": {
+            "items": {
+              "$ref": "#/components/schemas/IngredientSummary"
+            },
+            "type": "array",
+            "title": "Ingredients"
+          },
+          "missing_ingredients": {
+            "items": {
+              "$ref": "#/components/schemas/IngredientSummary"
+            },
+            "type": "array",
+            "title": "Missing Ingredients"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "one_missing"
+            ],
+            "title": "Visibility"
+          },
+          "last_eaten_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Eaten On"
+          },
+          "weight": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Weight"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "cooks",
+          "ingredients",
+          "missing_ingredients",
+          "visibility",
+          "last_eaten_on",
+          "weight"
+        ],
+        "title": "RecommendedDishRead"
+      },
       "RequestedBySummary": {
         "properties": {
           "id": {
@@ -1458,6 +1749,43 @@
           "invite_code"
         ],
         "title": "RotateInviteResponse"
+      },
+      "SearchResponse": {
+        "properties": {
+          "ready": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendedDishRead"
+            },
+            "type": "array",
+            "title": "Ready"
+          },
+          "one_missing": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendedDishRead"
+            },
+            "type": "array",
+            "title": "One Missing"
+          },
+          "meal_slot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meal Slot Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ready",
+          "one_missing",
+          "meal_slot_id"
+        ],
+        "title": "SearchResponse"
       },
       "SessionResponse": {
         "properties": {

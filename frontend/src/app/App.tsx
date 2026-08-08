@@ -9,8 +9,9 @@ import {
 import { FamilyPage } from "../features/households/FamilyPage";
 import { OnboardingPage } from "../features/households/OnboardingPage";
 import { TodayPage } from "../features/meals/TodayPage";
+import { ChooseForMePage } from "../features/recommendations/ChooseForMePage";
 
-type AppView = "today" | "dishes" | "family";
+type AppView = "today" | "dishes" | "choose" | "family";
 
 export function App() {
   const [session, setSession] = useState<SessionResponse | null>();
@@ -77,6 +78,13 @@ export function App() {
             </button>
             <button
               type="button"
+              aria-current={view === "choose" ? "page" : undefined}
+              onClick={() => setView("choose")}
+            >
+              帮我选
+            </button>
+            <button
+              type="button"
               aria-current={view === "family" ? "page" : undefined}
               onClick={() => setView("family")}
             >
@@ -87,6 +95,8 @@ export function App() {
             <TodayPage session={session} />
           ) : view === "dishes" ? (
             <DishListPage members={session.members} />
+          ) : view === "choose" ? (
+            <ChooseForMePage session={session} />
           ) : (
             <FamilyPage
               session={session}
