@@ -1,16 +1,16 @@
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
+from conftest import MutableClock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from httpx import Response
+from httpx2 import Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from app.households.models import Household, Member, Session
 from app.security import ALPHABET, hash_secret
-from conftest import MutableClock
 
 
 def create_household(
@@ -130,23 +130,17 @@ def test_expired_session_returns_401(
     async def expire_session() -> None:
         async with AsyncSession(test_engine) as db:
             stored = await db.scalar(
-                select(Session).where(
-                    Session.token_hash == hash_secret(raw_token)
-                )
+                select(Session).where(Session.token_hash == hash_secret(raw_token))
             )
             assert stored is not None
-            stored.expires_at = datetime.now(timezone.utc) - timedelta(
-                seconds=1
-            )
+            stored.expires_at = datetime.now(UTC) - timedelta(seconds=1)
             await db.commit()
 
     asyncio.run(expire_session())
     assert client.get("/api/session").status_code == 401
 
 
-def test_disabled_member_returns_403(
-    app: FastAPI, client: TestClient
-) -> None:
+def test_disabled_member_returns_403(app: FastAPI, client: TestClient) -> None:
     created = create_household(client)
     with TestClient(app) as joined_client:
         joined = joined_client.post(
@@ -158,31 +152,21 @@ def test_disabled_member_returns_403(
             },
         )
         member_id = joined.json()["member"]["id"]
-        disabled = client.post(
-            f"/api/households/members/{member_id}/disable"
-        )
+        disabled = client.post(f"/api/households/members/{member_id}/disable")
         assert disabled.status_code == 200
         assert joined_client.get("/api/session").status_code == 403
 
 
-def test_cross_household_member_returns_404(
-    app: FastAPI, client: TestClient
-) -> None:
+def test_cross_household_member_returns_404(app: FastAPI, client: TestClient) -> None:
     assert create_household(client, household_name="甲家").status_code == 201
     with TestClient(app) as other_owner:
-        other = create_household(
-            other_owner, household_name="乙家", owner_name="乙"
-        )
+        other = create_household(other_owner, household_name="乙家", owner_name="乙")
         other_member_id = other.json()["member"]["id"]
-        response = client.post(
-            f"/api/households/members/{other_member_id}/disable"
-        )
+        response = client.post(f"/api/households/members/{other_member_id}/disable")
     assert response.status_code == 404
 
 
-def test_non_owner_cannot_rotate_invite(
-    app: FastAPI, client: TestClient
-) -> None:
+def test_non_owner_cannot_rotate_invite(app: FastAPI, client: TestClient) -> None:
     created = create_household(client)
     with TestClient(app) as joined_client:
         assert (
@@ -289,16 +273,12 @@ def test_session_members_are_isolated_by_household(
         },
     )
     with TestClient(app) as other:
-        create_household(
-            other, household_name="乙家", owner_name="乙成员"
-        )
+        create_household(other, household_name="乙家", owner_name="乙成员")
         other_names = {
-            member["nickname"]
-            for member in other.get("/api/session").json()["members"]
+            member["nickname"] for member in other.get("/api/session").json()["members"]
         }
     first_names = {
-        member["nickname"]
-        for member in client.get("/api/session").json()["members"]
+        member["nickname"] for member in client.get("/api/session").json()["members"]
     }
     assert first_names == {"小林", "甲成员"}
     assert other_names == {"乙成员"}
@@ -340,9 +320,7 @@ def test_join_rate_limit_returns_429_after_ten_failures(
 @pytest.mark.parametrize(
     "invite_code", ["12345678", "ABCDEFGI", "TOO-SHORT", "ＡＢＣＤＥＦＧＨ"]
 )
-def test_rejects_invalid_invite_format(
-    client: TestClient, invite_code: str
-) -> None:
+def test_rejects_invalid_invite_format(client: TestClient, invite_code: str) -> None:
     response = client.post(
         "/api/households/join",
         json={
@@ -379,9 +357,7 @@ def test_pin_and_invite_code_are_only_stored_as_hashes(
 
     async def stored_secrets() -> tuple[str, str]:
         async with AsyncSession(test_engine) as db:
-            invite_hash = await db.scalar(
-                select(Household.invite_code_hash)
-            )
+            invite_hash = await db.scalar(select(Household.invite_code_hash))
             pin_hash = await db.scalar(select(Member.pin_hash))
             assert invite_hash is not None
             assert pin_hash is not None

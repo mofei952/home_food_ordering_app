@@ -5,9 +5,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 Pin = Annotated[str, Field(pattern=r"^\d{4,6}$")]
-InviteCode = Annotated[
-    str, Field(pattern=r"^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$")
-]
+InviteCode = Annotated[str, Field(pattern=r"^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$")]
 
 
 class CreateHouseholdRequest(BaseModel):

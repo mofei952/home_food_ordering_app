@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import DateTime, Uuid
@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class UUIDPrimaryKeyMixin:

@@ -55,9 +55,7 @@ def clock() -> MutableClock:
 
 @pytest.fixture
 def app(test_engine: AsyncEngine, clock: MutableClock) -> FastAPI:
-    session_factory = async_sessionmaker(
-        test_engine, expire_on_commit=False
-    )
+    session_factory = async_sessionmaker(test_engine, expire_on_commit=False)
 
     async def test_session() -> AsyncIterator[AsyncSession]:
         async with session_factory() as session:

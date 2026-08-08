@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, Request, Response
@@ -22,6 +23,7 @@ SESSION_COOKIE_NAME = "family_session"
 SESSION_TTL_SECONDS = 30 * 24 * 60 * 60
 PIN_FAILURE_LIMIT = 5
 JOIN_FAILURE_LIMIT = 10
+DbSession = Annotated[AsyncSession, Depends(get_session)]
 
 
 @dataclass(frozen=True)
@@ -31,7 +33,7 @@ class AuthContext:
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def rate_limiter(request: Request) -> SlidingWindowRateLimiter:
@@ -101,13 +103,9 @@ async def create_household_and_owner(
     return household, owner, invite_code
 
 
-async def household_for_invite(
-    db: AsyncSession, invite_code: str
-) -> Household | None:
+async def household_for_invite(db: AsyncSession, invite_code: str) -> Household | None:
     return await db.scalar(
-        select(Household).where(
-            Household.invite_code_hash == hash_secret(invite_code)
-        )
+        select(Household).where(Household.invite_code_hash == hash_secret(invite_code))
     )
 
 
@@ -124,7 +122,7 @@ async def member_for_nickname(
 
 async def require_member(
     request: Request,
-    db: AsyncSession = Depends(get_session),
+    db: DbSession,
 ) -> AuthContext:
     raw_token = request.cookies.get(SESSION_COOKIE_NAME)
     if raw_token is None:
@@ -142,7 +140,7 @@ async def require_member(
     stored_session, member, household = row
     expires_at = stored_session.expires_at
     if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
+        expires_at = expires_at.replace(tzinfo=UTC)
     if expires_at <= utc_now():
         await db.delete(stored_session)
         await db.commit()

@@ -53,12 +53,8 @@ class Member(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
         back_populates="member", cascade="all, delete-orphan"
     )
     __table_args__ = (
-        CheckConstraint(
-            "role IN ('owner', 'member')", name="ck_members_role"
-        ),
-        CheckConstraint(
-            "status IN ('active', 'disabled')", name="ck_members_status"
-        ),
+        CheckConstraint("role IN ('owner', 'member')", name="ck_members_role"),
+        CheckConstraint("status IN ('active', 'disabled')", name="ck_members_status"),
         Index(
             "uq_members_household_lower_nickname",
             household_id,
@@ -77,9 +73,7 @@ class Session(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
         nullable=False,
         index=True,
     )
-    token_hash: Mapped[str] = mapped_column(
-        String(64), nullable=False, unique=True
-    )
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, index=True
     )

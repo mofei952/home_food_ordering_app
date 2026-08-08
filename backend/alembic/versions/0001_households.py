@@ -7,6 +7,7 @@ Revises:
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "0001_households"
@@ -20,9 +21,7 @@ def upgrade() -> None:
         "households",
         sa.Column("name", sa.String(length=100), nullable=False),
         sa.Column("timezone", sa.String(length=64), nullable=False),
-        sa.Column(
-            "invite_code_hash", sa.String(length=64), nullable=False
-        ),
+        sa.Column("invite_code_hash", sa.String(length=64), nullable=False),
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column(
             "created_at",
@@ -52,9 +51,7 @@ def upgrade() -> None:
             server_default=sa.func.now(),
             nullable=False,
         ),
-        sa.CheckConstraint(
-            "role IN ('owner', 'member')", name="ck_members_role"
-        ),
+        sa.CheckConstraint("role IN ('owner', 'member')", name="ck_members_role"),
         sa.CheckConstraint(
             "status IN ('active', 'disabled')",
             name="ck_members_status",
@@ -64,9 +61,7 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        "ix_members_household_id", "members", ["household_id"]
-    )
+    op.create_index("ix_members_household_id", "members", ["household_id"])
     op.create_index(
         "uq_members_household_lower_nickname",
         "members",
@@ -85,9 +80,7 @@ def upgrade() -> None:
             server_default=sa.func.now(),
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(
-            ["member_id"], ["members.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["member_id"], ["members.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("token_hash"),
     )
@@ -99,9 +92,7 @@ def downgrade() -> None:
     op.drop_index("ix_sessions_member_id", table_name="sessions")
     op.drop_index("ix_sessions_expires_at", table_name="sessions")
     op.drop_table("sessions")
-    op.drop_index(
-        "uq_members_household_lower_nickname", table_name="members"
-    )
+    op.drop_index("uq_members_household_lower_nickname", table_name="members")
     op.drop_index("ix_members_household_id", table_name="members")
     op.drop_table("members")
     op.drop_table("households")

@@ -1,3 +1,4 @@
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Response, status
@@ -11,6 +12,7 @@ from app.households.schemas import (
     AuthResponse,
     CreateHouseholdRequest,
     CreateHouseholdResponse,
+    HouseholdSummary,
     JoinHouseholdRequest,
     MemberSummary,
     ResetPinRequest,
@@ -18,9 +20,9 @@ from app.households.schemas import (
     SessionResponse,
 )
 from app.households.service import (
-    AuthContext,
     JOIN_FAILURE_LIMIT,
     SESSION_COOKIE_NAME,
+    AuthContext,
     authenticate_existing_member,
     clear_session_cookie,
     create_household_and_owner,
@@ -39,6 +41,8 @@ from app.security import (
 )
 
 router = APIRouter(prefix="/api")
+DbSession = Annotated[AsyncSession, Depends(get_session)]
+CurrentMember = Annotated[AuthContext, Depends(require_member)]
 
 
 def cookie_is_secure(request: Request) -> bool:
@@ -55,7 +59,7 @@ async def create_household(
     payload: CreateHouseholdRequest,
     request: Request,
     response: Response,
-    db: AsyncSession = Depends(get_session),
+    db: DbSession,
 ) -> CreateHouseholdResponse:
     household, owner, invite_code = await create_household_and_owner(
         db,
@@ -64,11 +68,11 @@ async def create_household(
         owner_name=payload.owner_name,
         pin=payload.pin,
     )
-    await issue_session(
-        db, owner, response, secure=cookie_is_secure(request)
-    )
+    await issue_session(db, owner, response, secure=cookie_is_secure(request))
     return CreateHouseholdResponse(
-        household=household, member=owner, invite_code=invite_code
+        household=HouseholdSummary.model_validate(household),
+        member=MemberSummary.model_validate(owner),
+        invite_code=invite_code,
     )
 
 
@@ -81,7 +85,7 @@ async def join_household(
     payload: JoinHouseholdRequest,
     request: Request,
     response: Response,
-    db: AsyncSession = Depends(get_session),
+    db: DbSession,
 ) -> AuthResponse:
     limiter = rate_limiter(request)
     client_ip = normalize_client_ip(
@@ -89,18 +93,14 @@ async def join_household(
     )
     join_key = ("invite", client_ip)
     if limiter.is_limited(join_key, JOIN_FAILURE_LIMIT):
-        raise ApiError(
-            429, "邀请码尝试次数过多", "join_rate_limited"
-        )
+        raise ApiError(429, "邀请码尝试次数过多", "join_rate_limited")
     household = await household_for_invite(db, payload.invite_code)
     if household is None:
         limiter.record_failure(join_key)
         raise ApiError(404, "邀请码无效", "invalid_invite")
     limiter.clear(join_key)
 
-    member = await member_for_nickname(
-        db, household.id, payload.nickname
-    )
+    member = await member_for_nickname(db, household.id, payload.nickname)
     if member is not None:
         if member.status == "disabled":
             raise ApiError(403, "成员已停用", "member_disabled")
@@ -117,16 +117,17 @@ async def join_household(
         db.add(member)
         await db.flush()
 
-    await issue_session(
-        db, member, response, secure=cookie_is_secure(request)
+    await issue_session(db, member, response, secure=cookie_is_secure(request))
+    return AuthResponse(
+        household=HouseholdSummary.model_validate(household),
+        member=MemberSummary.model_validate(member),
     )
-    return AuthResponse(household=household, member=member)
 
 
 @router.get("/session", response_model=SessionResponse)
 async def get_current_session(
-    auth: AuthContext = Depends(require_member),
-    db: AsyncSession = Depends(get_session),
+    auth: CurrentMember,
+    db: DbSession,
 ) -> SessionResponse:
     members = list(
         await db.scalars(
@@ -136,9 +137,9 @@ async def get_current_session(
         )
     )
     return SessionResponse(
-        household=auth.household,
-        member=auth.member,
-        members=members,
+        household=HouseholdSummary.model_validate(auth.household),
+        member=MemberSummary.model_validate(auth.member),
+        members=[MemberSummary.model_validate(member) for member in members],
     )
 
 
@@ -146,14 +147,12 @@ async def get_current_session(
 async def delete_current_session(
     request: Request,
     response: Response,
-    db: AsyncSession = Depends(get_session),
+    db: DbSession,
 ) -> None:
     raw_token = request.cookies.get(SESSION_COOKIE_NAME)
     if raw_token is not None:
         stored_session = await db.scalar(
-            select(Session).where(
-                Session.token_hash == hash_secret(raw_token)
-            )
+            select(Session).where(Session.token_hash == hash_secret(raw_token))
         )
         if stored_session is not None:
             await db.delete(stored_session)
@@ -166,8 +165,8 @@ async def delete_current_session(
     response_model=RotateInviteResponse,
 )
 async def rotate_invite(
-    auth: AuthContext = Depends(require_member),
-    db: AsyncSession = Depends(get_session),
+    auth: CurrentMember,
+    db: DbSession,
 ) -> RotateInviteResponse:
     require_owner(auth)
     invite_code = generate_invite_code()
@@ -196,8 +195,8 @@ async def household_member(
 )
 async def disable_member(
     member_id: UUID,
-    auth: AuthContext = Depends(require_member),
-    db: AsyncSession = Depends(get_session),
+    auth: CurrentMember,
+    db: DbSession,
 ) -> Member:
     require_owner(auth)
     member = await household_member(db, auth, member_id)
@@ -215,8 +214,8 @@ async def disable_member(
 async def reset_member_pin(
     member_id: UUID,
     payload: ResetPinRequest,
-    auth: AuthContext = Depends(require_member),
-    db: AsyncSession = Depends(get_session),
+    auth: CurrentMember,
+    db: DbSession,
 ) -> Member:
     require_owner(auth)
     member = await household_member(db, auth, member_id)

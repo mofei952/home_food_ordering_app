@@ -13,8 +13,6 @@ class ApiError(Exception):
 
 def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(ApiError)
-    async def handle_api_error(
-        _request: Request, error: ApiError
-    ) -> JSONResponse:
+    async def handle_api_error(_request: Request, error: ApiError) -> JSONResponse:
         body: dict[str, Any] = {"detail": error.detail, "code": error.code}
         return JSONResponse(status_code=error.status_code, content=body)
