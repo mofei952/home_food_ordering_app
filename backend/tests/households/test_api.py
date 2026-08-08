@@ -1,14 +1,17 @@
 import asyncio
 from datetime import UTC, datetime, timedelta
+from typing import Any
+from uuid import UUID
 
 import pytest
 from conftest import MutableClock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx2 import Response
-from sqlalchemy import select
+from sqlalchemy import event, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
+from app.households import router as household_router
 from app.households.models import Household, Member, Session
 from app.security import ALPHABET, hash_secret
 
@@ -123,6 +126,92 @@ def test_existing_nickname_uses_database_lower_semantics(
     )
     assert response.status_code == 200
     assert response.json()["member"]["id"] == owner_id
+
+
+def test_nickname_lookup_lowers_both_sql_operands(
+    client: TestClient, test_engine: AsyncEngine
+) -> None:
+    created = create_household(client, owner_name="Alice")
+    statements: list[str] = []
+
+    def capture_statement(
+        _connection: Any,
+        _cursor: Any,
+        statement: str,
+        _parameters: Any,
+        _context: Any,
+        _executemany: bool,
+    ) -> None:
+        statements.append(statement)
+
+    event.listen(
+        test_engine.sync_engine, "before_cursor_execute", capture_statement
+    )
+    try:
+        response = client.post(
+            "/api/households/join",
+            json={
+                "invite_code": created.json()["invite_code"],
+                "nickname": "ALICE",
+                "pin": "1234",
+            },
+        )
+    finally:
+        event.remove(
+            test_engine.sync_engine,
+            "before_cursor_execute",
+            capture_statement,
+        )
+
+    assert response.status_code == 200
+    assert any(
+        "lower(members.nickname) = lower(?)" in statement
+        for statement in statements
+    )
+
+
+def test_concurrent_duplicate_nickname_recovers_as_existing_login(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = create_household(client)
+    invite_code = created.json()["invite_code"]
+    joined = client.post(
+        "/api/households/join",
+        json={
+            "invite_code": invite_code,
+            "nickname": "小周",
+            "pin": "5678",
+        },
+    )
+    member_id = joined.json()["member"]["id"]
+    original_lookup = household_router.member_for_nickname
+    lookup_count = 0
+
+    async def miss_before_concurrent_insert(
+        db: AsyncSession, household_id: UUID, nickname: str
+    ) -> Member | None:
+        nonlocal lookup_count
+        lookup_count += 1
+        if lookup_count == 1:
+            return None
+        return await original_lookup(db, household_id, nickname)
+
+    monkeypatch.setattr(
+        household_router,
+        "member_for_nickname",
+        miss_before_concurrent_insert,
+    )
+    response = client.post(
+        "/api/households/join",
+        json={
+            "invite_code": invite_code,
+            "nickname": "小周",
+            "pin": "5678",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["member"]["id"] == member_id
 
 
 def test_wrong_pin_returns_401(client: TestClient) -> None:
@@ -334,6 +423,34 @@ def test_join_rate_limit_returns_429_after_ten_failures(
     assert client.post("/api/households/join", json=payload).status_code == 404
 
 
+def test_valid_invite_with_wrong_pin_does_not_reset_join_rate_limit(
+    client: TestClient,
+) -> None:
+    created = create_household(client)
+    valid_payload = {
+        "invite_code": created.json()["invite_code"],
+        "nickname": "小林",
+        "pin": "9999",
+    }
+    invalid_payload = {
+        **valid_payload,
+        "invite_code": ALPHABET[0] * 8,
+    }
+    for _ in range(9):
+        assert (
+            client.post("/api/households/join", json=invalid_payload).status_code
+            == 404
+        )
+    assert (
+        client.post("/api/households/join", json=valid_payload).status_code
+        == 401
+    )
+    assert (
+        client.post("/api/households/join", json=valid_payload).status_code
+        == 429
+    )
+
+
 @pytest.mark.parametrize(
     "invite_code", ["12345678", "ABCDEFGI", "TOO-SHORT", "ＡＢＣＤＥＦＧＨ"]
 )
@@ -347,6 +464,38 @@ def test_rejects_invalid_invite_format(client: TestClient, invite_code: str) -> 
         },
     )
     assert response.status_code == 422
+
+
+def test_custom_validation_messages_are_simplified_chinese(
+    client: TestClient,
+) -> None:
+    blank_name = create_household(client, household_name="   ")
+    assert blank_name.status_code == 422
+    assert "名称不能为空" in blank_name.json()["detail"][0]["msg"]
+
+    unknown_timezone = client.post(
+        "/api/households",
+        json={
+            "household_name": "我家",
+            "owner_name": "小林",
+            "pin": "1234",
+            "timezone": "Mars/Olympus",
+        },
+    )
+    assert unknown_timezone.status_code == 422
+    assert "未知时区" in unknown_timezone.json()["detail"][0]["msg"]
+
+    created = create_household(client)
+    blank_nickname = client.post(
+        "/api/households/join",
+        json={
+            "invite_code": created.json()["invite_code"],
+            "nickname": "   ",
+            "pin": "5678",
+        },
+    )
+    assert blank_nickname.status_code == 422
+    assert "昵称不能为空" in blank_nickname.json()["detail"][0]["msg"]
 
 
 def test_only_session_hash_is_stored(

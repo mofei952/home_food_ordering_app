@@ -104,3 +104,38 @@ it("apiFetch turns API failures into typed errors", async () => {
     new ApiError("PIN 错误", 401, "invalid_pin"),
   );
 });
+
+it("apiFetch translates structured validation errors into Chinese", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          detail: [
+            {
+              type: "string_pattern_mismatch",
+              loc: ["body", "pin"],
+              msg: "String should match pattern '^\\d{4,6}$'",
+              input: "abc",
+            },
+          ],
+        }),
+        {
+          status: 422,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    ),
+  );
+
+  let error: unknown;
+  try {
+    await apiFetch("/api/households");
+  } catch (caught) {
+    error = caught;
+  }
+  expect(error).toBeInstanceOf(ApiError);
+  expect((error as ApiError).message).toBe("PIN 必须为 4 到 6 位数字");
+  expect((error as ApiError).message).not.toContain("[object Object]");
+  expect((error as ApiError).message).not.toContain("String should");
+});
