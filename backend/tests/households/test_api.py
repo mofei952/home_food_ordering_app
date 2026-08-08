@@ -360,12 +360,15 @@ def test_join_rate_limit_uses_forwarded_for_when_trusted(
         "nickname": "小周",
         "pin": "5678",
     }
-    for _ in range(10):
+    for index in range(10):
+        # Spoofed leftmost hops must share the proxy-appended rightmost bucket.
         assert (
             client.post(
                 "/api/households/join",
                 json=payload,
-                headers={"X-Forwarded-For": "203.0.113.10"},
+                headers={
+                    "X-Forwarded-For": f"198.51.100.{index}, 203.0.113.10",
+                },
             ).status_code
             == 404
         )
@@ -373,18 +376,42 @@ def test_join_rate_limit_uses_forwarded_for_when_trusted(
         client.post(
             "/api/households/join",
             json=payload,
-            headers={"X-Forwarded-For": "203.0.113.10"},
+            headers={"X-Forwarded-For": "198.51.100.99, 203.0.113.10"},
         ).status_code
         == 429
     )
-    # A different forwarded client IP has its own bucket.
+    # A different rightmost hop (trusted proxy peer) has its own bucket.
     assert (
         client.post(
             "/api/households/join",
             json=payload,
-            headers={"X-Forwarded-For": "203.0.113.11"},
+            headers={"X-Forwarded-For": "198.51.100.1, 203.0.113.11"},
         ).status_code
         == 404
+    )
+    # X-Real-IP (proxy overwrite-safe) wins over a spoofed X-Forwarded-For chain.
+    for _ in range(10):
+        assert (
+            client.post(
+                "/api/households/join",
+                json=payload,
+                headers={
+                    "X-Real-IP": "203.0.113.20",
+                    "X-Forwarded-For": "203.0.113.9, 198.51.100.1",
+                },
+            ).status_code
+            == 404
+        )
+    assert (
+        client.post(
+            "/api/households/join",
+            json=payload,
+            headers={
+                "X-Real-IP": "203.0.113.20",
+                "X-Forwarded-For": "203.0.113.8, 198.51.100.2",
+            },
+        ).status_code
+        == 429
     )
     clock.advance(15 * 60 + 1)
 

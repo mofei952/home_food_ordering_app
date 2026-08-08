@@ -54,19 +54,23 @@ def normalize_client_ip(value: str | None) -> str:
 def client_ip_from_request(request: Request, *, trusted_proxy_headers: bool) -> str:
     """Resolve client IP, optionally trusting reverse-proxy headers.
 
-    When ``trusted_proxy_headers`` is true (Compose/Caddy), prefer the leftmost
-    ``X-Forwarded-For`` hop or ``X-Real-IP``. Otherwise use the direct socket peer
-    so untrusted clients cannot spoof rate-limit keys.
+    When ``trusted_proxy_headers`` is true (Compose behind a single trusted proxy
+    such as Caddy), prefer ``X-Real-IP`` when present (proxy-overwrite-safe), else
+    the **rightmost** ``X-Forwarded-For`` hop (the address the trusted proxy
+    observed). Leftmost XFF is client-controlled and must not be used for
+    rate-limit keys. Otherwise use the direct socket peer.
     """
     if trusted_proxy_headers:
+        real_ip = request.headers.get("x-real-ip")
+        if real_ip is not None:
+            stripped = real_ip.strip()
+            if stripped:
+                return normalize_client_ip(stripped)
         forwarded = request.headers.get("x-forwarded-for")
         if forwarded:
-            first_hop = forwarded.split(",")[0].strip()
-            if first_hop:
-                return normalize_client_ip(first_hop)
-        real_ip = request.headers.get("x-real-ip")
-        if real_ip:
-            return normalize_client_ip(real_ip.strip())
+            hops = [hop.strip() for hop in forwarded.split(",") if hop.strip()]
+            if hops:
+                return normalize_client_ip(hops[-1])
     host = request.client.host if request.client is not None else None
     return normalize_client_ip(host)
 

@@ -27,7 +27,7 @@ cp .env.example .env
 | `DATABASE_URL` | 异步 SQLAlchemy URL。Compose/Postgres 示例见 `.env.example`；本地 e2e 可用 `sqlite+aiosqlite:////tmp/family-menu-e2e.db` |
 | `ENVIRONMENT` | `development` 时 Cookie 默认不要求 Secure；生产用 `production` |
 | `SECURE_COOKIES` | 显式覆盖 Cookie Secure。本地 Compose 走 HTTP `:8080` 时设为 `false`（见 `compose.yaml`） |
-| `TRUSTED_PROXY_HEADERS` | `true` 时加入限流使用 `X-Forwarded-For` / `X-Real-IP`（Compose 在 Caddy 后设为 true） |
+| `TRUSTED_PROXY_HEADERS` | `true` 时加入限流信任代理头：优先 `X-Real-IP`，否则取 `X-Forwarded-For` **最右**一跳（Compose 在 Caddy 后设为 true） |
 | `IMAGE_STORAGE` | `s3`（默认）或 `memory`（本地/测试） |
 | `S3_ENDPOINT_URL` | SDK 访问对象存储的内部地址（Compose 内为 `http://minio:9000`） |
 | `S3_PUBLIC_ENDPOINT_URL` | 浏览器可访问的签名 URL 主机（Compose：`http://127.0.0.1:9000`；未设则同 `S3_ENDPOINT_URL`） |
@@ -100,7 +100,7 @@ Backend 容器入口脚本会在启动 uvicorn 前执行 `alembic upgrade head`�
 本地 HTTP 试跑要点：
 
 - `SECURE_COOKIES=false`：避免在明文 HTTP 下签发 Secure Cookie（移动浏览器会丢弃）
-- `TRUSTED_PROXY_HEADERS=true`：加入限流按真实客户端 IP 分桶
+- `TRUSTED_PROXY_HEADERS=true`：加入限流按真实客户端 IP 分桶（`X-Real-IP` 或 XFF 最右一跳）
 - MinIO：`S3_ENDPOINT_URL=http://minio:9000`（容器内），`S3_PUBLIC_ENDPOINT_URL=http://127.0.0.1:9000`（浏览器签名 URL）
 - 端口：Caddy `8080`，Postgres `5432`，MinIO API `9000` / Console `9001`
 
