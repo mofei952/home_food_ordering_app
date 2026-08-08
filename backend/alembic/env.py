@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from app.config import Settings
 from app.db import Base
+from app.households import models as household_models  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", Settings().database_url)

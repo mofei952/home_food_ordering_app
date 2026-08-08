@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    environment: str = "development"
     database_url: str = (
         "postgresql+asyncpg://family_menu:family_menu@localhost:5432/family_menu"
     )
