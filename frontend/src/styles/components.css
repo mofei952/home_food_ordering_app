@@ -1,5 +1,19 @@
+.app-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
 .app-viewport {
-  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
   max-height: 100dvh;
   overflow: hidden;
   background: inherit;
@@ -8,8 +22,11 @@
 .app-shell {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   height: 100%;
   max-width: 40rem;
+  width: 100%;
   margin: 0 auto;
   overflow: hidden;
 }
@@ -18,10 +35,12 @@
   flex: 1;
   min-height: 0;
   width: 100%;
-  padding: 0 1rem 1rem;
+  padding: 0 1rem
+    calc(1rem + var(--nav-height) + var(--safe-bottom));
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .app-header {
@@ -66,17 +85,25 @@
 }
 
 .bottom-nav {
-  flex-shrink: 0;
-  position: relative;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 30;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.25rem;
-  min-height: calc(var(--nav-height) + var(--safe-bottom));
   padding: 0.35rem 0.75rem calc(0.35rem + var(--safe-bottom));
   background: var(--color-surface-raised);
   border-top: 1px solid var(--color-border);
   box-shadow: 0 -4px 16px rgba(28, 25, 23, 0.06);
+  backdrop-filter: blur(10px);
+}
+
+.bottom-nav__bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.25rem;
+  max-width: 40rem;
+  margin: 0 auto;
+  min-height: var(--nav-height);
 }
 
 .bottom-nav__link {

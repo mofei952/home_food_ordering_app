@@ -73,7 +73,8 @@ export function App() {
   }
 
   return (
-    <Routes>
+    <div className="app-root">
+      <Routes>
       <Route element={<AppShell />}>
         <Route index element={<TodayPage session={session} />} />
         <Route
@@ -97,5 +98,6 @@ export function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
+    </div>
   );
 }

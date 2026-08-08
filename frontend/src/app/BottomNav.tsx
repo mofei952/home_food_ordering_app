@@ -17,19 +17,21 @@ const DESTINATIONS = [
 export function BottomNav() {
   return (
     <nav className="bottom-nav" aria-label="主导航">
-      {DESTINATIONS.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.end}
-          className={({ isActive }) =>
-            isActive ? "bottom-nav__link is-active" : "bottom-nav__link"
-          }
-        >
-          <item.Icon />
-          <span>{item.label}</span>
-        </NavLink>
-      ))}
+      <div className="bottom-nav__bar">
+        {DESTINATIONS.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) =>
+              isActive ? "bottom-nav__link is-active" : "bottom-nav__link"
+            }
+          >
+            <item.Icon />
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
+      </div>
     </nav>
   );
 }
