@@ -55,6 +55,21 @@ const recommendedDish = {
   weight: "0.8",
 };
 
+function slotResponse(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "slot-1",
+    local_date: "2026-08-10",
+    meal_type: "dinner",
+    status: "pending",
+    version: 0,
+    requests: [],
+    menu: [],
+    last_modified_by: null,
+    last_modified_at: null,
+    ...overrides,
+  };
+}
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -62,11 +77,22 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+function isMealSlotLookup(url: string): boolean {
+  return /\/api\/meal-slots\/\d{4}-\d{2}-\d{2}\/(lunch|dinner)$/.test(url);
+}
+
 describe("ChooseForMePage", () => {
   it("groups search results into ready and one-missing sections", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.startsWith("/api/ingredients")) return jsonResponse(ingredients);
+      if (isMealSlotLookup(url)) {
+        return jsonResponse(
+          slotResponse({
+            meal_type: url.endsWith("/lunch") ? "lunch" : "dinner",
+          }),
+        );
+      }
       if (url === "/api/recommendations/search" && init?.method === "POST") {
         return jsonResponse({
           ready: [
@@ -102,10 +128,18 @@ describe("ChooseForMePage", () => {
     expect(within(oneMissing).getByText("缺少食材：鸡蛋")).toBeVisible();
   });
 
-  it("shows random pick details and reroll / accept actions", async () => {
+  it("resolves today's meal slot and accepts a pick into that meal", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.startsWith("/api/ingredients")) return jsonResponse(ingredients);
+      if (isMealSlotLookup(url)) {
+        return jsonResponse(
+          slotResponse({
+            id: "slot-resolved",
+            meal_type: url.endsWith("/lunch") ? "lunch" : "dinner",
+          }),
+        );
+      }
       if (url === "/api/recommendations/random" && init?.method === "POST") {
         return jsonResponse({
           dish: {
@@ -113,22 +147,29 @@ describe("ChooseForMePage", () => {
             missing_ingredients: [],
             visibility: "ready",
           },
-          meal_slot_id: "slot-1",
+          meal_slot_id: "slot-resolved",
         });
       }
       if (
-        url === "/api/meal-slots/slot-1/requests/d1" &&
+        url === "/api/meal-slots/slot-resolved/requests/d1" &&
         init?.method === "PUT"
       ) {
-        return jsonResponse({ id: "slot-1" });
+        return jsonResponse(slotResponse({ id: "slot-resolved" }));
       }
       return jsonResponse({}, 404);
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<ChooseForMePage session={session} mealSlotId="slot-1" />);
+    render(<ChooseForMePage session={session} />);
 
     await screen.findByText("番茄");
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringMatching(/\/api\/meal-slots\/\d{4}-\d{2}-\d{2}\/(lunch|dinner)$/),
+        expect.objectContaining({ credentials: "include" }),
+      ),
+    );
+
     fireEvent.click(screen.getByRole("button", { name: "随机一道" }));
 
     const result = await screen.findByRole("region", { name: "随机结果" });
@@ -149,12 +190,86 @@ describe("ChooseForMePage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "就吃这个" }));
     expect(await screen.findByText("已加入点菜：番茄炒蛋")).toBeVisible();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/meal-slots/slot-resolved/requests/d1",
+      expect.objectContaining({ method: "PUT" }),
+    );
+  });
+
+  it("shows active filters in random match conditions", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.startsWith("/api/ingredients")) return jsonResponse(ingredients);
+      if (isMealSlotLookup(url)) return jsonResponse(slotResponse());
+      if (url === "/api/recommendations/random" && init?.method === "POST") {
+        return jsonResponse({
+          dish: {
+            ...recommendedDish,
+            missing_ingredients: [],
+            visibility: "ready",
+          },
+          meal_slot_id: "slot-1",
+        });
+      }
+      return jsonResponse({}, 404);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ChooseForMePage session={session} />);
+
+    await screen.findByText("番茄");
+    fireEvent.click(screen.getByRole("checkbox", { name: "小林" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "素菜" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "番茄" }));
+    fireEvent.click(screen.getByRole("button", { name: "随机一道" }));
+
+    const result = await screen.findByRole("region", { name: "随机结果" });
+    expect(
+      within(result).getByText("匹配条件：制作者：小林；类别：素菜；现有食材：番茄"),
+    ).toBeVisible();
+  });
+
+  it("shows meal type toggle for lunch and dinner", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith("/api/ingredients")) return jsonResponse(ingredients);
+      if (isMealSlotLookup(url)) {
+        return jsonResponse(
+          slotResponse({
+            meal_type: url.endsWith("/lunch") ? "lunch" : "dinner",
+          }),
+        );
+      }
+      return jsonResponse({}, 404);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ChooseForMePage session={session} />);
+
+    const lunch = await screen.findByRole("button", { name: "午餐" });
+    const dinner = screen.getByRole("button", { name: "晚餐" });
+    expect(lunch).toBeVisible();
+    expect(dinner).toBeVisible();
+
+    const switchToDinner = lunch.getAttribute("aria-pressed") === "true";
+    fireEvent.click(switchToDinner ? dinner : lunch);
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringMatching(
+          switchToDinner
+            ? /\/api\/meal-slots\/\d{4}-\d{2}-\d{2}\/dinner$/
+            : /\/api\/meal-slots\/\d{4}-\d{2}-\d{2}\/lunch$/,
+        ),
+        expect.objectContaining({ credentials: "include" }),
+      ),
+    );
   });
 
   it("shows relaxable filters when there are no candidates", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.startsWith("/api/ingredients")) return jsonResponse(ingredients);
+      if (isMealSlotLookup(url)) return jsonResponse(slotResponse());
       if (url === "/api/recommendations/search") {
         return jsonResponse(
           {

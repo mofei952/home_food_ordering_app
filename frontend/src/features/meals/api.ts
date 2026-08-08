@@ -81,3 +81,22 @@ export function todayInTimezone(timeZone: string, now = new Date()): string {
   const day = parts.find((part) => part.type === "day")?.value ?? "01";
   return `${year}-${month}-${day}`;
 }
+
+export function hourInTimezone(timeZone: string, now = new Date()): number {
+  const hour = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "numeric",
+    hourCycle: "h23",
+  })
+    .formatToParts(now)
+    .find((part) => part.type === "hour")?.value;
+  return Number(hour ?? "0");
+}
+
+/** Lunch before 15:00 local household time; dinner otherwise. */
+export function defaultMealType(
+  timeZone: string,
+  now = new Date(),
+): MealType {
+  return hourInTimezone(timeZone, now) < 15 ? "lunch" : "dinner";
+}

@@ -1,8 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ApiError } from "../../api/client";
 import type { components } from "../../api/generated";
-import { putMealRequest } from "../meals/api";
+import {
+  defaultMealType,
+  getMealSlot,
+  MEAL_TYPE_LABELS,
+  putMealRequest,
+  todayInTimezone,
+  type MealType,
+} from "../meals/api";
 import {
   FILTER_LABELS,
   randomRecommendation,
@@ -20,6 +27,7 @@ const CATEGORIES: DishCategory[] = ["荤菜", "素菜", "主食", "汤", "其他
 
 interface ChooseForMePageProps {
   session: SessionResponse;
+  /** Optional override; when omitted the page resolves today's slot itself. */
   mealSlotId?: string | null;
 }
 
@@ -55,11 +63,20 @@ export function ChooseForMePage({
   session,
   mealSlotId = null,
 }: ChooseForMePageProps) {
+  const [mealType, setMealType] = useState<MealType>(() =>
+    defaultMealType(session.household.timezone),
+  );
+  const [resolvedMealSlotId, setResolvedMealSlotId] = useState<string | null>(
+    mealSlotId,
+  );
   const [cookIds, setCookIds] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [availableIngredientIds, setAvailableIngredientIds] = useState<
     string[]
   >([]);
+  const [ingredientNames, setIngredientNames] = useState<
+    Record<string, string>
+  >({});
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [picked, setPicked] = useState<RecommendedDishRead | null>(null);
   const [error, setError] = useState<string>();
@@ -67,19 +84,77 @@ export function ChooseForMePage({
   const [busy, setBusy] = useState(false);
   const [acceptedMessage, setAcceptedMessage] = useState<string>();
 
+  useEffect(() => {
+    if (mealSlotId) {
+      setResolvedMealSlotId(mealSlotId);
+      return;
+    }
+    let cancelled = false;
+    const localDate = todayInTimezone(session.household.timezone);
+    void getMealSlot(localDate, mealType)
+      .then((slot) => {
+        if (!cancelled) setResolvedMealSlotId(slot.id);
+      })
+      .catch((caught) => {
+        if (!cancelled) {
+          setResolvedMealSlotId(null);
+          setError(
+            caught instanceof ApiError ? caught.message : "加载餐次失败",
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mealSlotId, mealType, session.household.timezone]);
+
   function currentFilters(): RecommendationFilters {
     return {
       cookIds,
       categories,
       availableIngredientIds,
-      mealSlotId,
+      mealSlotId: resolvedMealSlotId,
     };
+  }
+
+  function formatActiveFilters(): string {
+    const parts: string[] = [];
+    if (cookIds.length > 0) {
+      const names = session.members
+        .filter((member) => cookIds.includes(member.id))
+        .map((member) => member.nickname);
+      parts.push(`制作者：${names.join("、")}`);
+    }
+    if (categories.length > 0) {
+      parts.push(`类别：${categories.join("、")}`);
+    }
+    if (availableIngredientIds.length > 0) {
+      const names = availableIngredientIds.map(
+        (id) => ingredientNames[id] ?? id,
+      );
+      parts.push(`现有食材：${names.join("、")}`);
+    }
+    return parts.length > 0 ? parts.join("；") : "无";
   }
 
   function toggleValue(list: string[], value: string): string[] {
     return list.includes(value)
       ? list.filter((item) => item !== value)
       : [...list, value];
+  }
+
+  async function ensureMealSlotId(): Promise<string | null> {
+    if (resolvedMealSlotId) return resolvedMealSlotId;
+    if (mealSlotId) return mealSlotId;
+    try {
+      const localDate = todayInTimezone(session.household.timezone);
+      const slot = await getMealSlot(localDate, mealType);
+      setResolvedMealSlotId(slot.id);
+      return slot.id;
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : "加载餐次失败");
+      return null;
+    }
   }
 
   async function handleSearch() {
@@ -127,14 +202,15 @@ export function ChooseForMePage({
 
   async function handleAccept() {
     if (!picked) return;
-    if (!mealSlotId) {
-      setAcceptedMessage(`已选中：${picked.name}`);
-      return;
-    }
     setBusy(true);
     setError(undefined);
     try {
-      await putMealRequest(mealSlotId, picked.id);
+      const slotId = await ensureMealSlotId();
+      if (!slotId) {
+        setError("无法确定当前餐次，请稍后重试");
+        return;
+      }
+      await putMealRequest(slotId, picked.id);
       setAcceptedMessage(`已加入点菜：${picked.name}`);
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : "加入点菜失败");
@@ -146,6 +222,21 @@ export function ChooseForMePage({
   return (
     <section aria-label="帮我选">
       <h2>帮我选</h2>
+
+      <fieldset>
+        <legend>餐次</legend>
+        {(["lunch", "dinner"] as const).map((type) => (
+          <button
+            key={type}
+            type="button"
+            aria-pressed={mealType === type}
+            disabled={busy || mealSlotId != null}
+            onClick={() => setMealType(type)}
+          >
+            {MEAL_TYPE_LABELS[type]}
+          </button>
+        ))}
+      </fieldset>
 
       <fieldset>
         <legend>制作者</legend>
@@ -182,6 +273,16 @@ export function ChooseForMePage({
       <IngredientPicker
         selectedIds={availableIngredientIds}
         onChange={setAvailableIngredientIds}
+        onToggleIngredient={(ingredient, selected) => {
+          setIngredientNames((current) => {
+            if (selected) {
+              return { ...current, [ingredient.id]: ingredient.name };
+            }
+            const next = { ...current };
+            delete next[ingredient.id];
+            return next;
+          });
+        }}
       />
 
       <div>
@@ -215,7 +316,7 @@ export function ChooseForMePage({
         <section aria-label="随机结果">
           <h3>随机结果</h3>
           <DishResult dish={picked} />
-          <p>匹配条件：制作者 / 类别 / 现有食材</p>
+          <p>匹配条件：{formatActiveFilters()}</p>
           <button
             type="button"
             disabled={busy}

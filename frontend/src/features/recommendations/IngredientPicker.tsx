@@ -6,11 +6,17 @@ import { searchIngredients, type IngredientRead } from "../dishes/api";
 interface IngredientPickerProps {
   selectedIds: string[];
   onChange: (ids: string[]) => void;
+  /** Called when a visible ingredient is toggled so parents can track names. */
+  onToggleIngredient?: (
+    ingredient: IngredientRead,
+    selected: boolean,
+  ) => void;
 }
 
 export function IngredientPicker({
   selectedIds,
   onChange,
+  onToggleIngredient,
 }: IngredientPickerProps) {
   const [query, setQuery] = useState("");
   const [ingredients, setIngredients] = useState<IngredientRead[]>([]);
@@ -39,12 +45,14 @@ export function IngredientPicker({
     };
   }, [query]);
 
-  function toggle(id: string) {
-    if (selectedIds.includes(id)) {
-      onChange(selectedIds.filter((item) => item !== id));
+  function toggle(ingredient: IngredientRead) {
+    const selected = !selectedIds.includes(ingredient.id);
+    if (selected) {
+      onChange([...selectedIds, ingredient.id]);
     } else {
-      onChange([...selectedIds, id]);
+      onChange(selectedIds.filter((item) => item !== ingredient.id));
     }
+    onToggleIngredient?.(ingredient, selected);
   }
 
   return (
@@ -66,7 +74,7 @@ export function IngredientPicker({
               <input
                 type="checkbox"
                 checked={selectedIds.includes(ingredient.id)}
-                onChange={() => toggle(ingredient.id)}
+                onChange={() => toggle(ingredient)}
               />
               {ingredient.name}
             </label>
