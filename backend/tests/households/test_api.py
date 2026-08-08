@@ -8,7 +8,7 @@ from httpx import Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from app.households.models import Session
+from app.households.models import Household, Member, Session
 from app.security import ALPHABET, hash_secret
 from conftest import MutableClock
 
@@ -84,6 +84,23 @@ def test_existing_nickname_with_correct_pin_signs_in(
         json={
             "invite_code": created.json()["invite_code"],
             "nickname": "小林",
+            "pin": "1234",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["member"]["id"] == owner_id
+
+
+def test_existing_nickname_match_is_case_insensitive(
+    client: TestClient,
+) -> None:
+    created = create_household(client, owner_name="Alice")
+    owner_id = created.json()["member"]["id"]
+    response = client.post(
+        "/api/households/join",
+        json={
+            "invite_code": created.json()["invite_code"].lower(),
+            "nickname": "ALICE",
             "pin": "1234",
         },
     )
@@ -352,3 +369,34 @@ def test_only_session_hash_is_stored(
     token_hash = asyncio.run(stored_token())
     assert token_hash == hash_secret(raw_token)
     assert token_hash != raw_token
+
+
+def test_pin_and_invite_code_are_only_stored_as_hashes(
+    client: TestClient, test_engine: AsyncEngine
+) -> None:
+    created = create_household(client)
+    invite_code = created.json()["invite_code"]
+
+    async def stored_secrets() -> tuple[str, str]:
+        async with AsyncSession(test_engine) as db:
+            invite_hash = await db.scalar(
+                select(Household.invite_code_hash)
+            )
+            pin_hash = await db.scalar(select(Member.pin_hash))
+            assert invite_hash is not None
+            assert pin_hash is not None
+            return invite_hash, pin_hash
+
+    invite_hash, pin_hash = asyncio.run(stored_secrets())
+    assert invite_hash == hash_secret(invite_code)
+    assert invite_code not in invite_hash
+    assert pin_hash != "1234"
+    assert "1234" not in pin_hash
+
+
+def test_session_cookie_is_secure_outside_development(
+    app: FastAPI, client: TestClient
+) -> None:
+    app.state.secure_cookies = True
+    response = create_household(client)
+    assert "Secure" in response.headers["set-cookie"]
