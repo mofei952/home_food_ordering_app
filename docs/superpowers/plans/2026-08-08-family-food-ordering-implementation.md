@@ -75,6 +75,7 @@
 ### Task 1: 建立可运行、可测试的前后端骨架
 
 **Files:**
+- Create: `.gitignore`
 - Create: `compose.yaml`
 - Create: `.env.example`
 - Create: `backend/pyproject.toml`
@@ -146,10 +147,13 @@ uv init --bare
 uv add fastapi "uvicorn[standard]" pydantic-settings sqlalchemy asyncpg alembic
 uv add --dev pytest httpx ruff mypy
 cd ../frontend
-npm create vite@latest . -- --template react-ts
-npm install @tanstack/react-query react-router-dom
-npm install -D vitest jsdom @testing-library/react @testing-library/jest-dom openapi-typescript
+npm init -y
+npm install react react-dom @tanstack/react-query react-router-dom
+npm install -D vite @vitejs/plugin-react typescript @types/react @types/react-dom vitest jsdom @testing-library/react @testing-library/jest-dom openapi-typescript
+npm pkg set scripts.dev="vite" scripts.build="tsc -b && vite build" scripts.test="vitest" scripts.api:generate="openapi-typescript openapi.json -o src/api/generated.ts"
 ```
+
+Create `.gitignore` with `.superpowers/`, `.env`, Python caches、`backend/.venv/`、`frontend/node_modules/`、`frontend/dist/` and Playwright output directories.
 
 Use this backend entry point:
 
