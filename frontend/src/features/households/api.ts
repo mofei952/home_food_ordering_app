@@ -9,6 +9,8 @@ export type CreateHouseholdInput =
   components["schemas"]["CreateHouseholdRequest"];
 export type JoinHouseholdInput =
   components["schemas"]["JoinHouseholdRequest"];
+export type RotateInviteResponse =
+  components["schemas"]["RotateInviteResponse"];
 
 function post<T>(path: string, body?: object): Promise<T> {
   return apiFetch<T>(path, {
@@ -31,6 +33,6 @@ export function getSession(): Promise<SessionResponse> {
   return apiFetch("/api/session");
 }
 
-export function rotateInvite(): Promise<{ invite_code: string }> {
+export function rotateInvite(): Promise<RotateInviteResponse> {
   return post("/api/households/invite/rotate");
 }

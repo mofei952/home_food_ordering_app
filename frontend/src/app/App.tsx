@@ -14,16 +14,22 @@ export function App() {
   const [error, setError] = useState<string>();
 
   async function loadSession(newInviteCode?: string) {
+    setError(undefined);
+    setSession(undefined);
     try {
       const current = await getSession();
       setSession(current);
       setInviteCode(newInviteCode);
-      setError(undefined);
     } catch (caught) {
-      if (caught instanceof ApiError && caught.status !== 401) {
-        setError(caught.message);
+      if (caught instanceof ApiError && caught.status === 401) {
+        setSession(null);
+        return;
       }
-      setSession(null);
+      setError(
+        caught instanceof ApiError
+          ? caught.message
+          : "服务暂时不可用，请稍后重试",
+      );
     }
   }
 
@@ -34,8 +40,16 @@ export function App() {
   return (
     <main>
       <h1>家庭点菜</h1>
-      {error && <p role="alert">{error}</p>}
-      {session === undefined ? (
+      {error ? (
+        <section>
+          <p role="alert" aria-label={error}>
+            {error}
+          </p>
+          <button type="button" onClick={() => void loadSession(inviteCode)}>
+            重试
+          </button>
+        </section>
+      ) : session === undefined ? (
         <p>正在加载…</p>
       ) : session === null ? (
         <OnboardingPage onAuthenticated={loadSession} />

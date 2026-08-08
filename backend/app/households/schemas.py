@@ -19,7 +19,7 @@ class CreateHouseholdRequest(BaseModel):
     def non_blank_name(cls, value: str) -> str:
         value = value.strip()
         if not value:
-            raise ValueError("Name cannot be blank")
+            raise ValueError("名称不能为空")
         return value
 
     @field_validator("timezone")
@@ -28,7 +28,7 @@ class CreateHouseholdRequest(BaseModel):
         try:
             ZoneInfo(value)
         except ZoneInfoNotFoundError as error:
-            raise ValueError("Unknown timezone") from error
+            raise ValueError("未知时区") from error
         return value
 
 
@@ -47,7 +47,7 @@ class JoinHouseholdRequest(BaseModel):
     def non_blank_nickname(cls, value: str) -> str:
         value = value.strip()
         if not value:
-            raise ValueError("Nickname cannot be blank")
+            raise ValueError("昵称不能为空")
         return value
 
 

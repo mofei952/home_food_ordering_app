@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
 from app.errors import ApiError
-from app.households.models import Member, Session
+from app.households.models import Household, Member, Session
 from app.households.schemas import (
     AuthResponse,
     CreateHouseholdRequest,
@@ -26,6 +26,7 @@ from app.households.service import (
     authenticate_existing_member,
     clear_session_cookie,
     create_household_and_owner,
+    create_member_or_recover_conflict,
     household_for_invite,
     issue_session,
     member_for_nickname,
@@ -35,7 +36,6 @@ from app.households.service import (
 )
 from app.security import (
     generate_invite_code,
-    hash_pin,
     hash_secret,
     normalize_client_ip,
 )
@@ -94,30 +94,37 @@ async def join_household(
     join_key = ("invite", client_ip)
     if limiter.is_limited(join_key, JOIN_FAILURE_LIMIT):
         raise ApiError(429, "邀请码尝试次数过多", "join_rate_limited")
-    household = await household_for_invite(db, payload.invite_code)
-    if household is None:
+    try:
+        household = await household_for_invite(db, payload.invite_code)
+        if household is None:
+            raise ApiError(404, "邀请码无效", "invalid_invite")
+        household_id = household.id
+
+        member = await member_for_nickname(db, household_id, payload.nickname)
+        existing_member = member is not None
+        if member is None:
+            member, existing_member = await create_member_or_recover_conflict(
+                db,
+                household_id=household_id,
+                nickname=payload.nickname,
+                pin=payload.pin,
+            )
+            if existing_member:
+                household = await db.get(Household, household_id)
+                if household is None:
+                    raise ApiError(404, "家庭不存在", "household_not_found")
+
+        if existing_member:
+            if member.status == "disabled":
+                raise ApiError(403, "成员已停用", "member_disabled")
+            await authenticate_existing_member(member, payload.pin, limiter)
+            response.status_code = status.HTTP_200_OK
+
+        await issue_session(db, member, response, secure=cookie_is_secure(request))
+    except Exception:
         limiter.record_failure(join_key)
-        raise ApiError(404, "邀请码无效", "invalid_invite")
+        raise
     limiter.clear(join_key)
-
-    member = await member_for_nickname(db, household.id, payload.nickname)
-    if member is not None:
-        if member.status == "disabled":
-            raise ApiError(403, "成员已停用", "member_disabled")
-        await authenticate_existing_member(member, payload.pin, limiter)
-        response.status_code = status.HTTP_200_OK
-    else:
-        member = Member(
-            household_id=household.id,
-            nickname=payload.nickname,
-            pin_hash=hash_pin(payload.pin),
-            role="member",
-            status="active",
-        )
-        db.add(member)
-        await db.flush()
-
-    await issue_session(db, member, response, secure=cookie_is_secure(request))
     return AuthResponse(
         household=HouseholdSummary.model_validate(household),
         member=MemberSummary.model_validate(member),

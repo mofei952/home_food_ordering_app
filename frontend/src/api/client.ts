@@ -1,3 +1,30 @@
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function validationMessage(detail: unknown): string {
+  if (!Array.isArray(detail) || !isRecord(detail[0])) {
+    return "提交内容格式不正确";
+  }
+  const location = detail[0].loc;
+  const field = Array.isArray(location)
+    ? location
+        .filter((part): part is string => typeof part === "string")
+        .at(-1)
+    : undefined;
+  const messages: Record<string, string> = {
+    household_name: "家庭名称不能为空或格式不正确",
+    owner_name: "创建者昵称不能为空或格式不正确",
+    nickname: "昵称不能为空或格式不正确",
+    pin: "PIN 必须为 4 到 6 位数字",
+    invite_code: "邀请码格式不正确",
+    timezone: "时区无效",
+  };
+  return field === undefined
+    ? "提交内容格式不正确"
+    : (messages[field] ?? "提交内容格式不正确");
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -8,11 +35,21 @@ export class ApiError extends Error {
   }
 
   static async fromResponse(response: Response): Promise<ApiError> {
-    const body = await response.json().catch(() => ({}));
+    const parsed: unknown = await response.json().catch(() => ({}));
+    const body = isRecord(parsed) ? parsed : {};
+    const detail = body.detail;
+    const message =
+      response.status === 422
+        ? validationMessage(detail)
+        : typeof detail === "string"
+          ? detail
+          : "请求失败";
+    const code =
+      typeof body.code === "string" ? body.code : "http_error";
     return new ApiError(
-      body.detail ?? "请求失败",
+      message,
       response.status,
-      body.code ?? "http_error",
+      code,
     );
   }
 }

@@ -144,9 +144,7 @@ def test_nickname_lookup_lowers_both_sql_operands(
     ) -> None:
         statements.append(statement)
 
-    event.listen(
-        test_engine.sync_engine, "before_cursor_execute", capture_statement
-    )
+    event.listen(test_engine.sync_engine, "before_cursor_execute", capture_statement)
     try:
         response = client.post(
             "/api/households/join",
@@ -165,8 +163,7 @@ def test_nickname_lookup_lowers_both_sql_operands(
 
     assert response.status_code == 200
     assert any(
-        "lower(members.nickname) = lower(?)" in statement
-        for statement in statements
+        "lower(members.nickname) = lower(?)" in statement for statement in statements
     )
 
 
@@ -438,17 +435,10 @@ def test_valid_invite_with_wrong_pin_does_not_reset_join_rate_limit(
     }
     for _ in range(9):
         assert (
-            client.post("/api/households/join", json=invalid_payload).status_code
-            == 404
+            client.post("/api/households/join", json=invalid_payload).status_code == 404
         )
-    assert (
-        client.post("/api/households/join", json=valid_payload).status_code
-        == 401
-    )
-    assert (
-        client.post("/api/households/join", json=valid_payload).status_code
-        == 429
-    )
+    assert client.post("/api/households/join", json=valid_payload).status_code == 401
+    assert client.post("/api/households/join", json=valid_payload).status_code == 429
 
 
 @pytest.mark.parametrize(

@@ -5,6 +5,7 @@ from uuid import UUID
 
 from fastapi import Depends, Request, Response
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
@@ -115,9 +116,39 @@ async def member_for_nickname(
     return await db.scalar(
         select(Member).where(
             Member.household_id == household_id,
-            func.lower(Member.nickname) == nickname.lower(),
+            func.lower(Member.nickname) == func.lower(nickname),
         )
     )
+
+
+async def create_member_or_recover_conflict(
+    db: AsyncSession,
+    *,
+    household_id: UUID,
+    nickname: str,
+    pin: str,
+) -> tuple[Member, bool]:
+    member = Member(
+        household_id=household_id,
+        nickname=nickname,
+        pin_hash=hash_pin(pin),
+        role="member",
+        status="active",
+    )
+    db.add(member)
+    try:
+        await db.flush()
+    except IntegrityError:
+        await db.rollback()
+        existing = await member_for_nickname(db, household_id, nickname)
+        if existing is None:
+            raise ApiError(
+                409,
+                "昵称已被占用，请重试",
+                "nickname_conflict",
+            ) from None
+        return existing, True
+    return member, False
 
 
 async def require_member(
