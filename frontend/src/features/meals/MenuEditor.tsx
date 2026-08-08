@@ -58,6 +58,15 @@ export function MenuEditor({
                 />
                 {dish.name}
               </label>
+              {!selected.includes(dish.id) ? (
+                <button
+                  type="button"
+                  data-write="true"
+                  onClick={() => toggle(dish.id)}
+                >
+                  {`加入最终菜单：${dish.name}`}
+                </button>
+              ) : null}
             </li>
           ))}
         </ul>

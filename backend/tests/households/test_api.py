@@ -4,7 +4,6 @@ from typing import Any
 from uuid import UUID
 
 import pytest
-from tests.conftest import MutableClock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx2 import Response
@@ -14,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from app.households import router as household_router
 from app.households.models import Household, Member, Session
 from app.security import ALPHABET, hash_secret
+from tests.conftest import MutableClock
 
 
 def create_household(

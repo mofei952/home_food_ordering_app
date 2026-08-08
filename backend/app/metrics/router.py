@@ -60,8 +60,8 @@ async def put_validation_checkin(
 async def get_history(
     auth: CurrentMember,
     db: DbSession,
-    from_date: date = Query(..., alias="from"),
-    to_date: date = Query(..., alias="to"),
+    from_date: Annotated[date, Query(alias="from")],
+    to_date: Annotated[date, Query(alias="to")],
 ) -> list[HistoryEntry]:
     return await list_history(db, auth, from_date, to_date)
 
@@ -70,7 +70,7 @@ async def get_history(
 async def get_metrics_summary(
     auth: CurrentMember,
     db: DbSession,
-    from_date: date = Query(..., alias="from"),
-    to_date: date = Query(..., alias="to"),
+    from_date: Annotated[date, Query(alias="from")],
+    to_date: Annotated[date, Query(alias="to")],
 ) -> MetricsSummary:
     return await summarize_metrics(db, auth, from_date, to_date)

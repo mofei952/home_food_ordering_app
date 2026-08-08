@@ -103,11 +103,15 @@ describe("TodayPage", () => {
 
     render(<TodayPage session={session} />);
 
-    expect(await screen.findByRole("heading", { name: "今天" })).toBeVisible();
+    expect(
+      await screen.findByRole("heading", { name: "今天吃什么？" }),
+    ).toBeVisible();
     expect(screen.getByRole("button", { name: "午餐" })).toBeVisible();
     expect(screen.getByRole("button", { name: "晚餐" })).toBeVisible();
     expect(screen.getByLabelText("餐次状态")).toHaveTextContent("待确认");
-    expect(screen.getByText("点菜人：小林、小周")).toBeVisible();
+    expect(screen.getByTestId("requesters-番茄炒蛋")).toHaveTextContent(
+      "小林、小周",
+    );
 
     const beforeDate = screen.getByRole("time").getAttribute("dateTime");
     expect(beforeDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);

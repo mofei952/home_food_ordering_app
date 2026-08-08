@@ -297,7 +297,8 @@ async def replace_menu(
             last_modified_at=utc_now(),
         )
     )
-    if result.rowcount == 0:
+    rowcount = getattr(result, "rowcount", 0)
+    if rowcount == 0:
         current_version = await db.scalar(
             select(MealSlot.version).where(
                 MealSlot.id == slot.id,

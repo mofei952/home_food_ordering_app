@@ -237,7 +237,8 @@ export function ChooseForMePage({
       void recordMealOpened(slotId, decisionSource).catch(() => {
         /* non-blocking analytics */
       });
-      setAcceptedMessage(`已加入点菜：${dish.name}`);
+      setAcceptedMessage("已加入今晚想吃清单");
+      setPicked(dish);
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : "加入点菜失败");
     } finally {
@@ -350,7 +351,9 @@ export function ChooseForMePage({
       {picked ? (
         <section aria-label="随机结果">
           <h3>随机结果</h3>
-          <DishResult dish={picked} />
+          <div data-testid="selected-dish" data-dish-id={picked.id}>
+            <DishResult dish={picked} />
+          </div>
           <p>匹配条件：{formatActiveFilters()}</p>
           <button
             type="button"

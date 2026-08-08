@@ -60,7 +60,12 @@ export function OnboardingPage({ onAuthenticated }: OnboardingPageProps) {
     <section>
       <h2>开始使用</h2>
       {error && <p role="alert">{error}</p>}
-      {inviteCode && <p>邀请码：{inviteCode}</p>}
+      {inviteCode ? (
+        <p>
+          邀请码：
+          <span data-testid="invite-code">{inviteCode}</span>
+        </p>
+      ) : null}
 
       <form aria-label="创建家庭" onSubmit={handleCreate}>
         <h3>创建家庭</h3>

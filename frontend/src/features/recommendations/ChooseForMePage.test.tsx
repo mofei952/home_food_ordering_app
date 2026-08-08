@@ -192,7 +192,7 @@ describe("ChooseForMePage", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "就吃这个" }));
-    expect(await screen.findByText("已加入点菜：番茄炒蛋")).toBeVisible();
+    expect(await screen.findByText("已加入今晚想吃清单")).toBeVisible();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/meal-slots/slot-resolved/requests/d1",
       expect.objectContaining({ method: "PUT" }),
@@ -266,7 +266,7 @@ describe("ChooseForMePage", () => {
     const ready = await screen.findByRole("region", { name: "现在就能做" });
     fireEvent.click(within(ready).getByRole("button", { name: "加入点菜" }));
 
-    expect(await screen.findByText("已加入点菜：青菜")).toBeVisible();
+    expect(await screen.findByText("已加入今晚想吃清单")).toBeVisible();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/meal-slots/slot-search/requests/d2",
       expect.objectContaining({ method: "PUT" }),

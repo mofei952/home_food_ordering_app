@@ -38,7 +38,12 @@ export function FamilyPage({
       <h2>{session.household.name}</h2>
       <p>当前角色：{roleLabel[session.member.role]}</p>
       {error && <p role="alert">{error}</p>}
-      {inviteCode && <p>邀请码：{inviteCode}</p>}
+      {inviteCode ? (
+        <p>
+          邀请码：
+          <span data-testid="invite-code">{inviteCode}</span>
+        </p>
+      ) : null}
       {session.member.role === "owner" && (
         <button type="button" data-write="true" onClick={handleRotateInvite}>
           刷新邀请码
@@ -55,6 +60,9 @@ export function FamilyPage({
         ))}
       </ul>
 
+      <p>
+        <a href="#history-heading">历史菜单</a>
+      </p>
       <HistoryPage endDate={todayInTimezone(session.household.timezone)} />
     </section>
   );

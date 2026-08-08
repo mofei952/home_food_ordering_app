@@ -110,7 +110,7 @@ export function TodayPage({ session }: TodayPageProps) {
 
   return (
     <section>
-      <h2>今天</h2>
+      <h2>今天吃什么？</h2>
       <div>
         <button
           type="button"

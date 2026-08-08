@@ -51,7 +51,9 @@ describe("OnboardingPage", () => {
     });
     fireEvent.submit(form);
 
-    expect(await screen.findByText("邀请码：ABCDEFGH")).toBeVisible();
+    expect(await screen.findByTestId("invite-code")).toHaveTextContent(
+      "ABCDEFGH",
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/households",
       expect.objectContaining({

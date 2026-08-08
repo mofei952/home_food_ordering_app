@@ -28,15 +28,18 @@ export function MealRequests({
             const mine = request.requested_by.some(
               (member) => member.id === currentMemberId,
             );
+            const requesterNames = request.requested_by
+              .map((member) => member.nickname)
+              .join("、");
             return (
               <li key={request.dish_id}>
                 <article>
                   <h4>{request.dish_name}</h4>
                   <p>
                     点菜人：
-                    {request.requested_by
-                      .map((member) => member.nickname)
-                      .join("、")}
+                    <span data-testid={`requesters-${request.dish_name}`}>
+                      {requesterNames}
+                    </span>
                   </p>
                   {mine ? (
                     <button
@@ -53,6 +56,20 @@ export function MealRequests({
           })}
         </ul>
       )}
+
+      <div aria-label="快捷点菜">
+        {dishOptions.map((dish) => (
+          <button
+            key={dish.id}
+            type="button"
+            data-write="true"
+            aria-label={`点${dish.name}`}
+            onClick={() => onRequest(dish.id)}
+          >
+            {`点${dish.name}`}
+          </button>
+        ))}
+      </div>
 
       <label>
         点一道菜

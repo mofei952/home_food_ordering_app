@@ -1,23 +1,77 @@
 # 家庭点菜
 
-家庭点菜 PWA 的前后端应用骨架。后端使用 FastAPI 和 PostgreSQL，前端使用
-React、TypeScript 和 Vite。
+家庭点菜是一个可安装的移动优先 PWA：两位（及以上）家庭成员在同一家庭内点菜、确认菜单，并可用食材/随机推荐辅助决策。
 
-## 本地运行
+后端：FastAPI + PostgreSQL（本地验收也可 SQLite）  
+前端：React + TypeScript + Vite + Playwright
 
-需要 Python 3.12+、uv、Node.js >=22.13.0、npm 和 Docker。
+## 先决条件
+
+- Python 3.12+ 与 [uv](https://github.com/astral-sh/uv)
+- Node.js >= 22.13.0 与 npm
+- （推荐）Docker / Docker Compose：用于 PostgreSQL、MinIO、同源反向代理的生产式本地栈
+- 本仓库在无 Docker 的环境也可开发与跑通 Playwright（SQLite + 内存图片存储）
+
+## 环境变量
+
+复制示例文件：
 
 ```bash
 cp .env.example .env
-docker compose up -d db
-
-cd backend
-uv sync
-uv run uvicorn app.main:app --reload
 ```
 
-另开终端启动前端；开发服务器会将 `/api` 代理到
-`http://localhost:8000`。
+常用变量：
+
+| 变量 | 说明 |
+| --- | --- |
+| `DATABASE_URL` | 异步 SQLAlchemy URL。Compose/Postgres 示例见 `.env.example`；本地 e2e 可用 `sqlite+aiosqlite:////tmp/family-menu-e2e.db` |
+| `ENVIRONMENT` | `development` 时 Cookie 不要求 Secure；生产用 `production` |
+| `IMAGE_STORAGE` | `s3`（默认）或 `memory`（本地/测试） |
+| `S3_ENDPOINT_URL` / `S3_ACCESS_KEY` / `S3_SECRET_KEY` / `S3_BUCKET` / `S3_REGION` | 对象存储（Compose 内为 MinIO） |
+
+## 数据库迁移
+
+```bash
+cd backend
+uv sync
+uv run alembic upgrade head
+```
+
+空库执行 `upgrade head` 即可建立 households / dishes / meals / metrics 全部表。  
+SQLite 本地 e2e 也可使用：
+
+```bash
+DATABASE_URL=sqlite+aiosqlite:////tmp/family-menu-e2e.db \
+  uv run python scripts/reset_sqlite_schema.py
+```
+
+## 本地启动（开发）
+
+### 仅依赖容器（有 Docker 时）
+
+```bash
+docker compose up -d db minio minio-init
+```
+
+### API
+
+```bash
+cd backend
+uv sync
+uv run alembic upgrade head
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+无 MinIO 时显式使用内存图片存储：
+
+```bash
+IMAGE_STORAGE=memory ENVIRONMENT=development \
+  uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+### 前端
+
+开发服务器将 `/api` 代理到 `http://127.0.0.1:8000`（同源相对路径，避免跨站 Cookie）：
 
 ```bash
 cd frontend
@@ -25,21 +79,86 @@ npm ci
 npm run dev
 ```
 
-访问 `http://localhost:5173`。后端健康检查为
-`http://localhost:8000/api/health`。
+访问 `http://127.0.0.1:5173`。健康检查：`http://127.0.0.1:8000/api/health`。
 
-## 测试与质量检查
+## 生产式 Compose（同源反向代理）
+
+`compose.yaml` 提供 `db`、`minio`、`backend`、`frontend`、`caddy`：
 
 ```bash
-cd backend
-uv run ruff check .
-uv run mypy app
-uv run pytest -v
-
-cd ../frontend
-npm test -- --run
-npm run build
+docker compose up -d --build
+# Caddy 监听宿主机 8080，/api → backend，其余 → frontend
+curl -fsS http://127.0.0.1:8080/api/health
 ```
+
+首次启动后端前请对 Postgres 执行迁移（可在 backend 容器或本机指向 Compose 的 `DATABASE_URL`）：
+
+```bash
+DATABASE_URL=postgresql+asyncpg://family_menu:family_menu@localhost:5432/family_menu \
+  uv run --directory backend alembic upgrade head
+```
+
+`deploy/Caddyfile` 保证浏览器只与同一来源通信，Session Cookie 不会变成跨站请求。
+
+## 测试与统一验收
+
+```bash
+# 后端
+uv run --directory backend ruff check .
+uv run --directory backend mypy app
+uv run --directory backend pytest tests -v
+
+# 前端
+npm --prefix frontend test -- --run
+npm --prefix frontend run build
+```
+
+端到端（首次需安装浏览器）：
+
+```bash
+cd frontend
+npm ci
+npx playwright install --with-deps chromium
+npm run test:e2e
+```
+
+一键验收（含 e2e）：
+
+```bash
+./scripts/verify.sh
+```
+
+`scripts/verify.sh` 行为：
+
+1. ruff / mypy / pytest / 前端单测 / 生产构建  
+2. e2e：若本机有 `docker compose`，则 `docker compose up -d --build` 后对 Caddy 入口跑 Playwright；否则自动走本地 SQLite + Vite dev 代理栈  
+3. 可用 `E2E_FORCE_LOCAL=1` 强制本地路径
+
+## 备份与恢复
+
+Postgres（Compose 卷 `postgres_data`）：
+
+```bash
+docker compose exec db pg_dump -U family_menu family_menu > backup-$(date +%F).sql
+docker compose exec -T db psql -U family_menu family_menu < backup-YYYY-MM-DD.sql
+```
+
+MinIO / S3 图片桶 `family-menu` 请同步备份对象（`mc mirror` 或云厂商快照）。  
+恢复后执行 `alembic upgrade head` 确认 schema 最新。
+
+## 邀请码找回
+
+邀请码仅在创建家庭或「刷新邀请码」时明文展示一次（库内只存哈希）。  
+若成员尚未加入且创建者丢失邀请码：由创建者登录后在「家庭」页点击「刷新邀请码」，把新码发给成员。  
+旧码立即失效。
+
+## 两周验证流程
+
+1. 家庭至少录入日常菜品（建议 15+），两位成员安装 PWA（移动 Chrome / Safari）。  
+2. 连续约 14 天在「今天」完成点菜与「确认菜单」；可用「帮我选」辅助。  
+3. 在「家庭 → 历史菜单」核对快照菜名（菜品改名后历史仍显示确认时的名字）。  
+4. 打开验证摘要：确认已统计餐次比例与确认耗时中位数；目标参考为约 70% 餐次有确认记录、中位确认时长约 150 秒（以摘要展示为准）。  
+5. 跑 `./scripts/verify.sh` 与跨家庭隔离集成测试，确认无越权读写。
 
 ## 更新 OpenAPI 类型
 
