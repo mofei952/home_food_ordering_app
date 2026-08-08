@@ -1,46 +1,14 @@
 import { apiFetch } from "../../api/client";
+import type { components } from "../../api/generated";
 
-export type MemberRole = "owner" | "member";
-export type MemberStatus = "active" | "disabled";
-
-export interface HouseholdSummary {
-  id: string;
-  name: string;
-  timezone: string;
-}
-
-export interface MemberSummary {
-  id: string;
-  nickname: string;
-  role: MemberRole;
-  status: MemberStatus;
-}
-
-export interface AuthResponse {
-  household: HouseholdSummary;
-  member: MemberSummary;
-}
-
-export interface CreateHouseholdResponse extends AuthResponse {
-  invite_code: string;
-}
-
-export interface SessionResponse extends AuthResponse {
-  members: MemberSummary[];
-}
-
-export interface CreateHouseholdInput {
-  household_name: string;
-  owner_name: string;
-  pin: string;
-  timezone: string;
-}
-
-export interface JoinHouseholdInput {
-  invite_code: string;
-  nickname: string;
-  pin: string;
-}
+export type AuthResponse = components["schemas"]["AuthResponse"];
+export type CreateHouseholdResponse =
+  components["schemas"]["CreateHouseholdResponse"];
+export type SessionResponse = components["schemas"]["SessionResponse"];
+export type CreateHouseholdInput =
+  components["schemas"]["CreateHouseholdRequest"];
+export type JoinHouseholdInput =
+  components["schemas"]["JoinHouseholdRequest"];
 
 function post<T>(path: string, body?: object): Promise<T> {
   return apiFetch<T>(path, {
