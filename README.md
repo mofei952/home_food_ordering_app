@@ -5,7 +5,7 @@ React、TypeScript 和 Vite。
 
 ## 本地运行
 
-需要 Python 3.12+、uv、Node.js 22+、npm 和 Docker。
+需要 Python 3.12+、uv、Node.js >=22.13.0、npm 和 Docker。
 
 ```bash
 cp .env.example .env
