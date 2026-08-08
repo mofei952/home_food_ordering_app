@@ -131,6 +131,63 @@ describe("TodayPage", () => {
     );
   });
 
+  it("records decision_source=direct when adding a meal request", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.startsWith("/api/dishes")) return jsonResponse(dishes);
+      if (url === "/api/events" && init?.method === "POST") {
+        return jsonResponse({ id: "evt-1" }, 201);
+      }
+      if (
+        url === "/api/meal-slots/slot-1/requests/d1" &&
+        init?.method === "PUT"
+      ) {
+        return jsonResponse(slotResponse());
+      }
+      if (url.includes("/api/meal-slots/")) {
+        return jsonResponse(
+          slotResponse({
+            requests: [],
+            status: "not_started",
+          }),
+        );
+      }
+      return jsonResponse({}, 404);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<TodayPage session={session} />);
+    await screen.findByLabelText("餐次状态");
+
+    fireEvent.change(screen.getByLabelText("点一道菜"), {
+      target: { value: "d1" },
+    });
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/meal-slots/slot-1/requests/d1",
+        expect.objectContaining({ method: "PUT" }),
+      ),
+    );
+    await waitFor(() => {
+      const eventCalls = fetchMock.mock.calls.filter(
+        ([url, init]) =>
+          String(url) === "/api/events" &&
+          (init as RequestInit | undefined)?.method === "POST",
+      );
+      const bodies = eventCalls.map(([, init]) =>
+        JSON.parse(String((init as RequestInit).body)),
+      );
+      expect(bodies).toContainEqual({
+        name: "meal_opened",
+        properties: {
+          meal_slot_id: "slot-1",
+          decision_source: "direct",
+        },
+      });
+    });
+  });
+
   it("shows conflict banner and refreshes after version conflict", async () => {
     let menuPutSeen = false;
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {

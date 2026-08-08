@@ -67,6 +67,9 @@ export function TodayPage({ session }: TodayPageProps) {
     try {
       const updated = await putMealRequest(slot.id, dishId);
       setSlot(updated);
+      void recordMealOpened(slot.id, "direct").catch(() => {
+        /* non-blocking analytics */
+      });
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : "点菜失败");
     }

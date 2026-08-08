@@ -156,6 +156,9 @@ describe("ChooseForMePage", () => {
       ) {
         return jsonResponse(slotResponse({ id: "slot-resolved" }));
       }
+      if (url === "/api/events" && init?.method === "POST") {
+        return jsonResponse({ id: "evt-1" }, 201);
+      }
       return jsonResponse({}, 404);
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -194,6 +197,96 @@ describe("ChooseForMePage", () => {
       "/api/meal-slots/slot-resolved/requests/d1",
       expect.objectContaining({ method: "PUT" }),
     );
+    await waitFor(() => {
+      const eventBodies = fetchMock.mock.calls
+        .filter(
+          ([url, init]) =>
+            String(url) === "/api/events" &&
+            (init as RequestInit | undefined)?.method === "POST",
+        )
+        .map(([, init]) => JSON.parse(String((init as RequestInit).body)));
+      expect(eventBodies).toContainEqual({
+        name: "meal_opened",
+        properties: {
+          meal_slot_id: "slot-resolved",
+          decision_source: "random",
+        },
+      });
+    });
+  });
+
+  it("adds from ingredient search with decision_source=ingredient", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.startsWith("/api/ingredients")) return jsonResponse(ingredients);
+      if (isMealSlotLookup(url)) {
+        return jsonResponse(
+          slotResponse({
+            id: "slot-search",
+            meal_type: url.endsWith("/lunch") ? "lunch" : "dinner",
+          }),
+        );
+      }
+      if (url === "/api/recommendations/search" && init?.method === "POST") {
+        return jsonResponse({
+          ready: [
+            {
+              ...recommendedDish,
+              id: "d2",
+              name: "青菜",
+              category: "素菜",
+              missing_ingredients: [],
+              visibility: "ready",
+              last_eaten_on: null,
+              weight: "1.0",
+              ingredients: [{ id: "i3", name: "青菜" }],
+            },
+          ],
+          one_missing: [recommendedDish],
+          meal_slot_id: "slot-search",
+        });
+      }
+      if (
+        url === "/api/meal-slots/slot-search/requests/d2" &&
+        init?.method === "PUT"
+      ) {
+        return jsonResponse(slotResponse({ id: "slot-search" }));
+      }
+      if (url === "/api/events" && init?.method === "POST") {
+        return jsonResponse({ id: "evt-1" }, 201);
+      }
+      return jsonResponse({}, 404);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ChooseForMePage session={session} />);
+    await screen.findByText("番茄");
+    fireEvent.click(screen.getByRole("button", { name: "按食材查找" }));
+
+    const ready = await screen.findByRole("region", { name: "现在就能做" });
+    fireEvent.click(within(ready).getByRole("button", { name: "加入点菜" }));
+
+    expect(await screen.findByText("已加入点菜：青菜")).toBeVisible();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/meal-slots/slot-search/requests/d2",
+      expect.objectContaining({ method: "PUT" }),
+    );
+    await waitFor(() => {
+      const eventBodies = fetchMock.mock.calls
+        .filter(
+          ([url, init]) =>
+            String(url) === "/api/events" &&
+            (init as RequestInit | undefined)?.method === "POST",
+        )
+        .map(([, init]) => JSON.parse(String((init as RequestInit).body)));
+      expect(eventBodies).toContainEqual({
+        name: "meal_opened",
+        properties: {
+          meal_slot_id: "slot-search",
+          decision_source: "ingredient",
+        },
+      });
+    });
   });
 
   it("shows active filters in random match conditions", async () => {

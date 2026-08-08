@@ -398,3 +398,98 @@ def test_history_cross_household_isolation(
     assert len(own) == 3
     names = {item["dish_name"] for entry in own for item in entry["menu"]}
     assert "别家菜" not in names
+
+
+def test_summary_date_range_uses_household_timezone_near_local_midnight(
+    client: TestClient,
+    household: dict,
+    dish: UUID,
+    frozen_clock: FrozenClock,
+) -> None:
+    """Shanghai local Aug 3 early morning is still Aug 2 UTC.
+
+    UTC-midnight bounds would exclude the open/confirm pair from
+    from=to=2026-08-03 and drop the median; household-TZ bounds keep it.
+    """
+    del household
+    # 2026-08-02 20:00 UTC == 2026-08-03 04:00 Asia/Shanghai
+    frozen_clock.set(datetime(2026, 8, 2, 20, 0, 0, tzinfo=UTC))
+    slot = _get_slot(client, "2026-08-03", "lunch")
+    opened = client.post(
+        "/api/events",
+        json={
+            "name": "meal_opened",
+            "properties": {
+                "meal_slot_id": slot["id"],
+                "decision_source": "direct",
+            },
+        },
+    )
+    assert opened.status_code == 201
+    frozen_clock.advance(120)
+    _confirm(client, slot["id"], dish, expected_version=0)
+
+    result = client.get(
+        "/api/metrics/summary?from=2026-08-03&to=2026-08-03"
+    ).json()
+    assert result["median_confirmation_seconds"] == 120
+    assert result["decision_source_counts"]["direct"] == 1
+
+
+def test_rejects_client_menu_lifecycle_events(
+    client: TestClient, household: dict
+) -> None:
+    del household
+    slot = _get_slot(client, "2026-08-03", "dinner")
+    for name in ("menu_confirmed", "menu_modified"):
+        response = client.post(
+            "/api/events",
+            json={
+                "name": name,
+                "properties": {"meal_slot_id": slot["id"]},
+            },
+        )
+        assert response.status_code == 422
+        assert response.json()["code"] == "event_server_only"
+
+
+def test_first_request_added_emitted_once_per_slot(
+    client: TestClient,
+    household: dict,
+    dish: UUID,
+    frozen_clock: FrozenClock,
+    test_engine,
+) -> None:
+    del frozen_clock
+    import asyncio
+
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from app.metrics.models import ActivityEvent
+
+    owner_id = household["member"]["id"]
+    other_dish = _create_dish(client, owner_id, "清炒时蔬")
+    slot = _get_slot(client, "2026-08-07", "dinner")
+    first = client.put(f"/api/meal-slots/{slot['id']}/requests/{dish}")
+    assert first.status_code == 200
+    second = client.put(f"/api/meal-slots/{slot['id']}/requests/{other_dish}")
+    assert second.status_code == 200
+
+    async def load_events() -> list[ActivityEvent]:
+        async with AsyncSession(test_engine) as db:
+            return list(
+                (
+                    await db.scalars(
+                        select(ActivityEvent).where(
+                            ActivityEvent.name == "first_request_added",
+                            ActivityEvent.household_id
+                            == UUID(household["household"]["id"]),
+                        )
+                    )
+                ).all()
+            )
+
+    events = asyncio.run(load_events())
+    assert len(events) == 1
+    assert events[0].properties["meal_slot_id"] == slot["id"]

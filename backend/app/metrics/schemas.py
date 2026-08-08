@@ -21,6 +21,9 @@ ALLOWED_EVENT_NAMES: frozenset[str] = frozenset(
         "menu_modified",
     }
 )
+SERVER_ONLY_EVENT_NAMES: frozenset[str] = frozenset(
+    {"menu_confirmed", "menu_modified"}
+)
 ALLOWED_PROPERTY_KEYS: frozenset[str] = frozenset(
     {
         "meal_slot_id",

@@ -207,6 +207,12 @@ async def upsert_request(
         )
     )
     if existing is None:
+        prior_any = await db.scalar(
+            select(MealRequest.id)
+            .where(MealRequest.meal_slot_id == slot.id)
+            .limit(1)
+        )
+        is_first_request = prior_any is None
         db.add(
             MealRequest(
                 meal_slot_id=slot.id,
@@ -216,6 +222,10 @@ async def upsert_request(
         )
         if slot.status == "not_started":
             slot.status = "pending"
+        if is_first_request:
+            from app.metrics.service import record_first_request_added
+
+            await record_first_request_added(db, auth, slot)
         try:
             await db.commit()
         except IntegrityError:

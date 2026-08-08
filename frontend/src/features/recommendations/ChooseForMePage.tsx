@@ -42,7 +42,17 @@ function formatIngredients(
   return items.map((item) => item.name).join("、") || "无";
 }
 
-function DishResult({ dish }: { dish: RecommendedDishRead }) {
+function DishResult({
+  dish,
+  onAdd,
+  busy = false,
+  addLabel = "加入点菜",
+}: {
+  dish: RecommendedDishRead;
+  onAdd?: (dish: RecommendedDishRead) => void;
+  busy?: boolean;
+  addLabel?: string;
+}) {
   return (
     <article>
       <h4>{dish.name}</h4>
@@ -56,6 +66,15 @@ function DishResult({ dish }: { dish: RecommendedDishRead }) {
         上次食用：
         {dish.last_eaten_on ?? "从未吃过"}
       </p>
+      {onAdd ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onAdd(dish)}
+        >
+          {addLabel}
+        </button>
+      ) : null}
     </article>
   );
 }
@@ -201,8 +220,10 @@ export function ChooseForMePage({
     }
   }
 
-  async function handleAccept() {
-    if (!picked) return;
+  async function acceptDish(
+    dish: RecommendedDishRead,
+    decisionSource: "random" | "ingredient",
+  ) {
     setBusy(true);
     setError(undefined);
     try {
@@ -211,16 +232,25 @@ export function ChooseForMePage({
         setError("无法确定当前餐次，请稍后重试");
         return;
       }
-      await putMealRequest(slotId, picked.id);
-      void recordMealOpened(slotId, "random").catch(() => {
+      await putMealRequest(slotId, dish.id);
+      void recordMealOpened(slotId, decisionSource).catch(() => {
         /* non-blocking analytics */
       });
-      setAcceptedMessage(`已加入点菜：${picked.name}`);
+      setAcceptedMessage(`已加入点菜：${dish.name}`);
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : "加入点菜失败");
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleAccept() {
+    if (!picked) return;
+    await acceptDish(picked, "random");
+  }
+
+  async function handleAddFromSearch(dish: RecommendedDishRead) {
+    await acceptDish(dish, "ingredient");
   }
 
   return (
@@ -346,7 +376,12 @@ export function ChooseForMePage({
               <p>暂无</p>
             ) : (
               results.ready.map((dish) => (
-                <DishResult key={dish.id} dish={dish} />
+                <DishResult
+                  key={dish.id}
+                  dish={dish}
+                  busy={busy}
+                  onAdd={(item) => void handleAddFromSearch(item)}
+                />
               ))
             )}
           </section>
@@ -356,7 +391,12 @@ export function ChooseForMePage({
               <p>暂无</p>
             ) : (
               results.one_missing.map((dish) => (
-                <DishResult key={dish.id} dish={dish} />
+                <DishResult
+                  key={dish.id}
+                  dish={dish}
+                  busy={busy}
+                  onAdd={(item) => void handleAddFromSearch(item)}
+                />
               ))
             )}
           </section>

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from statistics import median
 from typing import Any
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +17,7 @@ from app.meals.models import MealSlot
 from app.metrics.models import ActivityEvent, ValidationCheckin
 from app.metrics.schemas import (
     ALLOWED_PROPERTY_KEYS,
+    SERVER_ONLY_EVENT_NAMES,
     ConfirmationDetail,
     DecisionSourceCounts,
     EventCreate,
@@ -38,14 +40,18 @@ def _as_uuid(value: Any) -> UUID | None:
         return None
 
 
-def _day_start(day: date) -> datetime:
-    return datetime.combine(day, time.min, tzinfo=common_models.utc_now().tzinfo)
-
-
-def _day_end_exclusive(day: date) -> datetime:
-    return datetime.combine(
-        day + timedelta(days=1), time.min, tzinfo=common_models.utc_now().tzinfo
+def _day_start(day: date, timezone_name: str) -> datetime:
+    """Start of household-local calendar day, as UTC for DB comparison."""
+    return datetime.combine(day, time.min, tzinfo=ZoneInfo(timezone_name)).astimezone(
+        UTC
     )
+
+
+def _day_end_exclusive(day: date, timezone_name: str) -> datetime:
+    """Exclusive end of household-local calendar day, as UTC for DB comparison."""
+    return datetime.combine(
+        day + timedelta(days=1), time.min, tzinfo=ZoneInfo(timezone_name)
+    ).astimezone(UTC)
 
 
 def require_monday(week_start: date) -> None:
@@ -76,6 +82,8 @@ async def record_event(
     *,
     commit: bool = True,
 ) -> ActivityEvent:
+    if payload.name in SERVER_ONLY_EVENT_NAMES:
+        raise ApiError(422, "该事件仅可由服务端记录", "event_server_only")
     event = ActivityEvent(
         household_id=auth.household.id,
         member_id=auth.member.id,
@@ -118,6 +126,23 @@ async def record_menu_lifecycle_event(
     )
 
 
+async def record_first_request_added(
+    db: AsyncSession,
+    auth: AuthContext,
+    slot: MealSlot,
+) -> None:
+    """Server-side event when the first request is added to a meal slot."""
+    db.add(
+        ActivityEvent(
+            household_id=auth.household.id,
+            member_id=auth.member.id,
+            name="first_request_added",
+            properties={"meal_slot_id": str(slot.id)},
+            created_at=common_models.utc_now(),
+        )
+    )
+
+
 async def upsert_validation_checkin(
     db: AsyncSession,
     auth: AuthContext,
@@ -151,12 +176,15 @@ async def upsert_validation_checkin(
 
 
 def _events_in_range(
-    household_id: UUID, from_date: date, to_date: date
+    household_id: UUID,
+    from_date: date,
+    to_date: date,
+    timezone_name: str,
 ) -> Select[tuple[ActivityEvent]]:
     return select(ActivityEvent).where(
         ActivityEvent.household_id == household_id,
-        ActivityEvent.created_at >= _day_start(from_date),
-        ActivityEvent.created_at < _day_end_exclusive(to_date),
+        ActivityEvent.created_at >= _day_start(from_date, timezone_name),
+        ActivityEvent.created_at < _day_end_exclusive(to_date, timezone_name),
     )
 
 
@@ -169,12 +197,13 @@ async def summarize_metrics(
     if to_date < from_date:
         raise ApiError(422, "结束日期不能早于开始日期", "invalid_date_range")
 
+    timezone_name = auth.household.timezone
     events = list(
         (
             await db.scalars(
-                _events_in_range(auth.household.id, from_date, to_date).order_by(
-                    ActivityEvent.created_at.asc()
-                )
+                _events_in_range(
+                    auth.household.id, from_date, to_date, timezone_name
+                ).order_by(ActivityEvent.created_at.asc())
             )
         ).all()
     )
