@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ApiError } from "../../api/client";
 import type { components } from "../../api/generated";
 import { listDishes, type DishRead } from "../dishes/api";
+import { recordMealOpened } from "../history/api";
 import {
   deleteMealRequest,
   getMealSlot,
@@ -45,6 +46,9 @@ export function TodayPage({ session }: TodayPageProps) {
       ]);
       setSlot(nextSlot);
       setDishes(nextDishes);
+      void recordMealOpened(nextSlot.id).catch(() => {
+        /* non-blocking analytics */
+      });
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : "加载餐次失败");
     } finally {

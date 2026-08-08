@@ -254,6 +254,7 @@ async def replace_menu(
     db: AsyncSession, auth: AuthContext, slot_id: UUID, payload: MenuUpdate
 ) -> MealSlot:
     slot = await require_slot(db, auth.household.id, slot_id)
+    was_confirmed = slot.status == "confirmed"
 
     dishes: list[Dish] = []
     seen: set[UUID] = set()
@@ -310,6 +311,12 @@ async def replace_menu(
                 image_key_snapshot=dish.image_key,
             )
         )
+
+    from app.metrics.service import record_menu_lifecycle_event
+
+    await record_menu_lifecycle_event(
+        db, auth, slot, was_confirmed=was_confirmed
+    )
 
     await db.commit()
     return await require_slot(db, auth.household.id, slot_id)

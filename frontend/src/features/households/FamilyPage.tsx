@@ -1,6 +1,8 @@
 import { useState } from "react";
 
 import { ApiError } from "../../api/client";
+import { HistoryPage } from "../history/HistoryPage";
+import { todayInTimezone } from "../meals/api";
 import { rotateInvite, SessionResponse } from "./api";
 
 interface FamilyPageProps {
@@ -52,6 +54,8 @@ export function FamilyPage({
           </li>
         ))}
       </ul>
+
+      <HistoryPage endDate={todayInTimezone(session.household.timezone)} />
     </section>
   );
 }

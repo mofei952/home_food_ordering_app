@@ -807,6 +807,198 @@
         }
       }
     },
+    "/api/events": {
+      "post": {
+        "summary": "Create Event",
+        "operationId": "create_event_api_events_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/validation-checkins/{week_start}": {
+      "put": {
+        "summary": "Put Validation Checkin",
+        "operationId": "put_validation_checkin_api_validation_checkins__week_start__put",
+        "parameters": [
+          {
+            "name": "week_start",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Week Start"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationCheckinWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationCheckinRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/history": {
+      "get": {
+        "summary": "Get History",
+        "operationId": "get_history_api_history_get",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HistoryEntry"
+                  },
+                  "title": "Response Get History Api History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics/summary": {
+      "get": {
+        "summary": "Get Metrics Summary",
+        "operationId": "get_metrics_summary_api_metrics_summary_get",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health",
@@ -847,6 +1039,80 @@
           "member"
         ],
         "title": "AuthResponse"
+      },
+      "ConfirmationDetail": {
+        "properties": {
+          "meal_slot_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Meal Slot Id"
+          },
+          "local_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Date"
+          },
+          "meal_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "lunch",
+                  "dinner"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meal Type"
+          },
+          "request_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Count"
+          },
+          "participant_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participant Count"
+          },
+          "confirmation_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmation Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "meal_slot_id"
+        ],
+        "title": "ConfirmationDetail"
       },
       "CookSummary": {
         "properties": {
@@ -922,6 +1188,27 @@
           "invite_code"
         ],
         "title": "CreateHouseholdResponse"
+      },
+      "DecisionSourceCounts": {
+        "properties": {
+          "direct": {
+            "type": "integer",
+            "title": "Direct",
+            "default": 0
+          },
+          "random": {
+            "type": "integer",
+            "title": "Random",
+            "default": 0
+          },
+          "ingredient": {
+            "type": "integer",
+            "title": "Ingredient",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "DecisionSourceCounts"
       },
       "DishCreate": {
         "properties": {
@@ -1123,6 +1410,67 @@
         ],
         "title": "DishUpdate"
       },
+      "EventCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "meal_opened",
+              "first_request_added",
+              "menu_confirmed",
+              "menu_modified"
+            ],
+            "title": "Name"
+          },
+          "properties": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Properties"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "EventCreate"
+      },
+      "EventRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "enum": [
+              "meal_opened",
+              "first_request_added",
+              "menu_confirmed",
+              "menu_modified"
+            ],
+            "title": "Name"
+          },
+          "properties": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Properties"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "properties",
+          "created_at"
+        ],
+        "title": "EventRead"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1135,6 +1483,117 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HistoryEntry": {
+        "properties": {
+          "meal_slot_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Meal Slot Id"
+          },
+          "local_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Local Date"
+          },
+          "meal_type": {
+            "type": "string",
+            "enum": [
+              "lunch",
+              "dinner"
+            ],
+            "title": "Meal Type"
+          },
+          "menu": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryMenuItem"
+            },
+            "type": "array",
+            "title": "Menu"
+          },
+          "last_modified_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HistoryLastModifier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_modified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Modified At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "meal_slot_id",
+          "local_date",
+          "meal_type",
+          "menu",
+          "last_modified_by",
+          "last_modified_at"
+        ],
+        "title": "HistoryEntry"
+      },
+      "HistoryLastModifier": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nickname": {
+            "type": "string",
+            "title": "Nickname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nickname"
+        ],
+        "title": "HistoryLastModifier"
+      },
+      "HistoryMenuItem": {
+        "properties": {
+          "dish_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Dish Id"
+          },
+          "dish_name": {
+            "type": "string",
+            "title": "Dish Name"
+          },
+          "image_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dish_id",
+          "dish_name",
+          "image_key"
+        ],
+        "title": "HistoryMenuItem"
       },
       "HouseholdSummary": {
         "properties": {
@@ -1489,6 +1948,66 @@
         ],
         "title": "MergedMealRequestRead"
       },
+      "MetricsSummary": {
+        "properties": {
+          "median_confirmation_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Confirmation Seconds"
+          },
+          "app_decided_meal_ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Decided Meal Ratio"
+          },
+          "decision_source_counts": {
+            "$ref": "#/components/schemas/DecisionSourceCounts"
+          },
+          "menu_modified_count": {
+            "type": "integer",
+            "title": "Menu Modified Count"
+          },
+          "confirmation_details": {
+            "items": {
+              "$ref": "#/components/schemas/ConfirmationDetail"
+            },
+            "type": "array",
+            "title": "Confirmation Details"
+          },
+          "offline_discussion_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offline Discussion Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "median_confirmation_seconds",
+          "app_decided_meal_ratio",
+          "decision_source_counts",
+          "menu_modified_count",
+          "confirmation_details"
+        ],
+        "title": "MetricsSummary"
+      },
       "RandomRequest": {
         "properties": {
           "cook_ids": {
@@ -1829,6 +2348,56 @@
           "nickname"
         ],
         "title": "UpdatedBySummary"
+      },
+      "ValidationCheckinRead": {
+        "properties": {
+          "week_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Week Start"
+          },
+          "home_meal_count": {
+            "type": "integer",
+            "title": "Home Meal Count"
+          },
+          "offline_discussion_count": {
+            "type": "integer",
+            "title": "Offline Discussion Count"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_start",
+          "home_meal_count",
+          "offline_discussion_count",
+          "updated_at"
+        ],
+        "title": "ValidationCheckinRead"
+      },
+      "ValidationCheckinWrite": {
+        "properties": {
+          "home_meal_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Home Meal Count"
+          },
+          "offline_discussion_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Offline Discussion Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "home_meal_count",
+          "offline_discussion_count"
+        ],
+        "title": "ValidationCheckinWrite"
       },
       "ValidationError": {
         "properties": {

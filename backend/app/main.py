@@ -8,6 +8,7 @@ from app.dishes.router import router as dishes_router
 from app.errors import install_error_handlers
 from app.households.router import router as households_router
 from app.meals.router import router as meals_router
+from app.metrics.router import router as metrics_router
 from app.recommendations.router import router as recommendations_router
 from app.security import SlidingWindowRateLimiter
 
@@ -26,6 +27,7 @@ def create_app(
     app.include_router(dishes_router)
     app.include_router(meals_router)
     app.include_router(recommendations_router)
+    app.include_router(metrics_router)
 
     @app.get("/api/health")
     async def health() -> dict[str, str]:

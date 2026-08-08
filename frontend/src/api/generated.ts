@@ -248,6 +248,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Event */
+        post: operations["create_event_api_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/validation-checkins/{week_start}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Validation Checkin */
+        put: operations["put_validation_checkin_api_validation_checkins__week_start__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get History */
+        get: operations["get_history_api_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/metrics/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Metrics Summary */
+        get: operations["get_metrics_summary_api_metrics_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -273,6 +341,24 @@ export interface components {
         AuthResponse: {
             household: components["schemas"]["HouseholdSummary"];
             member: components["schemas"]["MemberSummary"];
+        };
+        /** ConfirmationDetail */
+        ConfirmationDetail: {
+            /**
+             * Meal Slot Id
+             * Format: uuid
+             */
+            meal_slot_id: string;
+            /** Local Date */
+            local_date?: string | null;
+            /** Meal Type */
+            meal_type?: ("lunch" | "dinner") | null;
+            /** Request Count */
+            request_count?: number | null;
+            /** Participant Count */
+            participant_count?: number | null;
+            /** Confirmation Seconds */
+            confirmation_seconds?: number | null;
         };
         /** CookSummary */
         CookSummary: {
@@ -301,6 +387,24 @@ export interface components {
             member: components["schemas"]["MemberSummary"];
             /** Invite Code */
             invite_code: string;
+        };
+        /** DecisionSourceCounts */
+        DecisionSourceCounts: {
+            /**
+             * Direct
+             * @default 0
+             */
+            direct: number;
+            /**
+             * Random
+             * @default 0
+             */
+            random: number;
+            /**
+             * Ingredient
+             * @default 0
+             */
+            ingredient: number;
         };
         /** DishCreate */
         DishCreate: {
@@ -363,10 +467,89 @@ export interface components {
             /** Image Key */
             image_key?: string | null;
         };
+        /** EventCreate */
+        EventCreate: {
+            /**
+             * Name
+             * @enum {string}
+             */
+            name: "meal_opened" | "first_request_added" | "menu_confirmed" | "menu_modified";
+            /** Properties */
+            properties?: {
+                [key: string]: unknown;
+            };
+        };
+        /** EventRead */
+        EventRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Name
+             * @enum {string}
+             */
+            name: "meal_opened" | "first_request_added" | "menu_confirmed" | "menu_modified";
+            /** Properties */
+            properties: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HistoryEntry */
+        HistoryEntry: {
+            /**
+             * Meal Slot Id
+             * Format: uuid
+             */
+            meal_slot_id: string;
+            /**
+             * Local Date
+             * Format: date
+             */
+            local_date: string;
+            /**
+             * Meal Type
+             * @enum {string}
+             */
+            meal_type: "lunch" | "dinner";
+            /** Menu */
+            menu: components["schemas"]["HistoryMenuItem"][];
+            last_modified_by: components["schemas"]["HistoryLastModifier"] | null;
+            /** Last Modified At */
+            last_modified_at: string | null;
+        };
+        /** HistoryLastModifier */
+        HistoryLastModifier: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Nickname */
+            nickname: string;
+        };
+        /** HistoryMenuItem */
+        HistoryMenuItem: {
+            /**
+             * Dish Id
+             * Format: uuid
+             */
+            dish_id: string;
+            /** Dish Name */
+            dish_name: string;
+            /** Image Key */
+            image_key: string | null;
         };
         /** HouseholdSummary */
         HouseholdSummary: {
@@ -513,6 +696,20 @@ export interface components {
             /** Requested By */
             requested_by: components["schemas"]["RequestedBySummary"][];
         };
+        /** MetricsSummary */
+        MetricsSummary: {
+            /** Median Confirmation Seconds */
+            median_confirmation_seconds: number | null;
+            /** App Decided Meal Ratio */
+            app_decided_meal_ratio: number | null;
+            decision_source_counts: components["schemas"]["DecisionSourceCounts"];
+            /** Menu Modified Count */
+            menu_modified_count: number;
+            /** Confirmation Details */
+            confirmation_details: components["schemas"]["ConfirmationDetail"][];
+            /** Offline Discussion Count */
+            offline_discussion_count?: number | null;
+        };
         /** RandomRequest */
         RandomRequest: {
             /** Cook Ids */
@@ -618,6 +815,30 @@ export interface components {
             id: string;
             /** Nickname */
             nickname: string;
+        };
+        /** ValidationCheckinRead */
+        ValidationCheckinRead: {
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+            /** Home Meal Count */
+            home_meal_count: number;
+            /** Offline Discussion Count */
+            offline_discussion_count: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ValidationCheckinWrite */
+        ValidationCheckinWrite: {
+            /** Home Meal Count */
+            home_meal_count: number;
+            /** Offline Discussion Count */
+            offline_discussion_count: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -1240,6 +1461,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RandomResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_event_api_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_validation_checkin_api_validation_checkins__week_start__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                week_start: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidationCheckinWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationCheckinRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_history_api_history_get: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_metrics_summary_api_metrics_summary_get: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricsSummary"];
                 };
             };
             /** @description Validation Error */

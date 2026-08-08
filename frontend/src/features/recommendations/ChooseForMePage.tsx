@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { ApiError } from "../../api/client";
 import type { components } from "../../api/generated";
+import { recordMealOpened } from "../history/api";
 import {
   defaultMealType,
   getMealSlot,
@@ -211,6 +212,9 @@ export function ChooseForMePage({
         return;
       }
       await putMealRequest(slotId, picked.id);
+      void recordMealOpened(slotId, "random").catch(() => {
+        /* non-blocking analytics */
+      });
       setAcceptedMessage(`已加入点菜：${picked.name}`);
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : "加入点菜失败");

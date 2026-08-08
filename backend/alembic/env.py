@@ -9,6 +9,7 @@ from app.db import Base
 from app.dishes import models as dish_models  # noqa: F401
 from app.households import models as household_models  # noqa: F401
 from app.meals import models as meal_models  # noqa: F401
+from app.metrics import models as metric_models  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", Settings().database_url)
