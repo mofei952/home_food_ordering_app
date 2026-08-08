@@ -69,6 +69,7 @@ function DishResult({
       {onAdd ? (
         <button
           type="button"
+          data-write="true"
           disabled={busy}
           onClick={() => onAdd(dish)}
         >
@@ -353,6 +354,7 @@ export function ChooseForMePage({
           <p>匹配条件：{formatActiveFilters()}</p>
           <button
             type="button"
+            data-write="true"
             disabled={busy}
             onClick={() => void handleAccept()}
           >

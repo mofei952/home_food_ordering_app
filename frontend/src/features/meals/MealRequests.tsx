@@ -41,6 +41,7 @@ export function MealRequests({
                   {mine ? (
                     <button
                       type="button"
+                      data-write="true"
                       onClick={() => onWithdraw(request.dish_id)}
                     >
                       撤回

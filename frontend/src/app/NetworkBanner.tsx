@@ -24,9 +24,12 @@ export function useOnlineStatus() {
   return online;
 }
 
-export function NetworkBanner() {
-  const online = useOnlineStatus();
+interface NetworkBannerProps {
+  /** Shared online status from AppShell; avoids a second listener. */
+  online: boolean;
+}
 
+export function NetworkBanner({ online }: NetworkBannerProps) {
   if (online) {
     return null;
   }

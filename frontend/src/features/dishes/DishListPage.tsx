@@ -195,7 +195,11 @@ export function DishListPage({ members }: DishListPageProps) {
                 <button type="button" onClick={() => setEditing(dish)}>
                   编辑
                 </button>
-                <button type="button" onClick={() => void handleArchive(dish)}>
+                <button
+                  type="button"
+                  data-write="true"
+                  onClick={() => void handleArchive(dish)}
+                >
                   归档
                 </button>
               </article>

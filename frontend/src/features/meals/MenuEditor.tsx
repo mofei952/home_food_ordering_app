@@ -62,7 +62,12 @@ export function MenuEditor({
           ))}
         </ul>
       )}
-      <button type="button" disabled={busy} onClick={() => void handleConfirm()}>
+      <button
+        type="button"
+        data-write="true"
+        disabled={busy}
+        onClick={() => void handleConfirm()}
+      >
         确认菜单
       </button>
     </section>

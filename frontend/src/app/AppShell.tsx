@@ -56,7 +56,7 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="app-shell" data-online={online ? "true" : "false"}>
-      <NetworkBanner />
+      <NetworkBanner online={online} />
       <div className="app-shell__content" ref={contentRef}>
         {children ?? <Outlet />}
       </div>

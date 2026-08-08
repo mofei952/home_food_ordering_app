@@ -40,7 +40,7 @@ export function FamilyPage({
       {error && <p role="alert">{error}</p>}
       {inviteCode && <p>邀请码：{inviteCode}</p>}
       {session.member.role === "owner" && (
-        <button type="button" onClick={handleRotateInvite}>
+        <button type="button" data-write="true" onClick={handleRotateInvite}>
           刷新邀请码
         </button>
       )}
