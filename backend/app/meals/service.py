@@ -3,7 +3,7 @@ from datetime import date, datetime
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -172,7 +172,11 @@ async def get_or_create_meal_slot(
 
 
 async def _require_active_dish(
-    db: AsyncSession, household_id: UUID, dish_id: UUID
+    db: AsyncSession,
+    household_id: UUID,
+    dish_id: UUID,
+    *,
+    archived_detail: str,
 ) -> Dish:
     dish = await db.scalar(
         select(Dish).where(Dish.id == dish_id, Dish.household_id == household_id)
@@ -180,7 +184,7 @@ async def _require_active_dish(
     if dish is None:
         raise ApiError(404, "菜品不存在", "dish_not_found")
     if dish.archived_at is not None:
-        raise ApiError(422, "已归档菜品不能加入菜单", "dish_archived")
+        raise ApiError(422, archived_detail, "dish_archived")
     return dish
 
 
@@ -188,7 +192,12 @@ async def upsert_request(
     db: AsyncSession, auth: AuthContext, slot_id: UUID, dish_id: UUID
 ) -> MealSlot:
     slot = await require_slot(db, auth.household.id, slot_id)
-    await _require_active_dish(db, auth.household.id, dish_id)
+    await _require_active_dish(
+        db,
+        auth.household.id,
+        dish_id,
+        archived_detail="已归档菜品不能点选",
+    )
 
     existing = await db.scalar(
         select(MealRequest).where(
@@ -245,13 +254,6 @@ async def replace_menu(
     db: AsyncSession, auth: AuthContext, slot_id: UUID, payload: MenuUpdate
 ) -> MealSlot:
     slot = await require_slot(db, auth.household.id, slot_id)
-    if payload.expected_version != slot.version:
-        raise ApiError(
-            409,
-            "菜单已被其他成员更新",
-            "version_conflict",
-            current_version=slot.version,
-        )
 
     dishes: list[Dish] = []
     seen: set[UUID] = set()
@@ -259,7 +261,44 @@ async def replace_menu(
         if dish_id in seen:
             continue
         seen.add(dish_id)
-        dishes.append(await _require_active_dish(db, auth.household.id, dish_id))
+        dishes.append(
+            await _require_active_dish(
+                db,
+                auth.household.id,
+                dish_id,
+                archived_detail="已归档菜品不能加入菜单",
+            )
+        )
+
+    # Claim the version atomically so concurrent writers with the same
+    # expected_version cannot both commit.
+    result = await db.execute(
+        update(MealSlot)
+        .where(
+            MealSlot.id == slot.id,
+            MealSlot.household_id == auth.household.id,
+            MealSlot.version == payload.expected_version,
+        )
+        .values(
+            version=payload.expected_version + 1,
+            status="confirmed",
+            last_modified_by_id=auth.member.id,
+            last_modified_at=utc_now(),
+        )
+    )
+    if result.rowcount == 0:
+        current_version = await db.scalar(
+            select(MealSlot.version).where(
+                MealSlot.id == slot.id,
+                MealSlot.household_id == auth.household.id,
+            )
+        )
+        raise ApiError(
+            409,
+            "菜单已被其他成员更新",
+            "version_conflict",
+            current_version=current_version if current_version is not None else slot.version,
+        )
 
     await db.execute(delete(MenuItem).where(MenuItem.meal_slot_id == slot.id))
     for dish in dishes:
@@ -272,9 +311,5 @@ async def replace_menu(
             )
         )
 
-    slot.version += 1
-    slot.status = "confirmed"
-    slot.last_modified_by_id = auth.member.id
-    slot.last_modified_at = utc_now()
     await db.commit()
     return await require_slot(db, auth.household.id, slot_id)

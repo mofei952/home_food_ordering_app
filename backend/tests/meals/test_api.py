@@ -188,6 +188,20 @@ def test_menu_rejects_archived_dish(
     )
     assert response.status_code == 422
     assert response.json()["code"] == "dish_archived"
+    assert response.json()["detail"] == "已归档菜品不能加入菜单"
+
+
+def test_request_rejects_archived_dish(
+    client: TestClient, slot: SimpleNamespace, dish: SimpleNamespace
+) -> None:
+    archived = client.delete(f"/api/dishes/{dish.id}")
+    assert archived.status_code == 200
+    assert archived.json()["archived_at"] is not None
+
+    response = client.put(f"/api/meal-slots/{slot.id}/requests/{dish.id}")
+    assert response.status_code == 422
+    assert response.json()["code"] == "dish_archived"
+    assert response.json()["detail"] == "已归档菜品不能点选"
 
 
 def test_duplicate_request_is_idempotent(

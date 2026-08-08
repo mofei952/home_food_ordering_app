@@ -1,8 +1,18 @@
 from types import SimpleNamespace
+from typing import Any
 from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import event, select, update
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
+
+from app.errors import ApiError
+from app.households.models import Household, Member
+from app.households.service import AuthContext
+from app.meals.models import MealSlot
+from app.meals.schemas import MenuUpdate
+from app.meals.service import replace_menu
 
 
 def _create_household(client: TestClient) -> dict:
@@ -62,7 +72,11 @@ def test_menu_version_conflict_is_idempotent_under_stale_retry(
         json={"dish_ids": [], "expected_version": 0},
     )
     assert stale.status_code == 409
-    assert stale.json() == {"detail": stale.json()["detail"], "code": "version_conflict", "current_version": 1}
+    assert stale.json() == {
+        "detail": stale.json()["detail"],
+        "code": "version_conflict",
+        "current_version": 1,
+    }
 
     # Retry with refreshed version succeeds and is idempotent for empty menu.
     refreshed = client.put(
@@ -81,3 +95,107 @@ def test_menu_version_conflict_is_idempotent_under_stale_retry(
     assert again.status_code == 200
     assert again.json()["version"] == 3
     assert again.json()["menu"] == []
+
+
+def test_replace_menu_update_sql_includes_expected_version(
+    client: TestClient,
+    test_engine: AsyncEngine,
+    slot: SimpleNamespace,
+    dish: SimpleNamespace,
+) -> None:
+    """Prove the version claim uses UPDATE … WHERE version = :expected."""
+    statements: list[str] = []
+
+    def capture_statement(
+        _connection: Any,
+        _cursor: Any,
+        statement: str,
+        _parameters: Any,
+        _context: Any,
+        _executemany: bool,
+    ) -> None:
+        statements.append(statement)
+
+    event.listen(test_engine.sync_engine, "before_cursor_execute", capture_statement)
+    try:
+        response = client.put(
+            f"/api/meal-slots/{slot.id}/menu",
+            json={"dish_ids": [str(dish.id)], "expected_version": 0},
+        )
+    finally:
+        event.remove(
+            test_engine.sync_engine,
+            "before_cursor_execute",
+            capture_statement,
+        )
+
+    assert response.status_code == 200
+    normalized = [" ".join(stmt.lower().split()) for stmt in statements]
+    assert any(
+        stmt.startswith("update meal_slots")
+        and "meal_slots.version =" in stmt
+        and "meal_slots.id =" in stmt
+        and "meal_slots.household_id =" in stmt
+        for stmt in normalized
+    )
+
+
+def test_second_writer_conflicts_via_conditional_update_rowcount(
+    client: TestClient,
+    test_engine: AsyncEngine,
+    household: dict,
+    slot: SimpleNamespace,
+    dish: SimpleNamespace,
+) -> None:
+    """
+    Both writers observe expected_version=0 before either writes.
+
+    The second writer's conditional UPDATE matches 0 rows and raises 409,
+    even though its in-memory read still saw version 0.
+    """
+    import asyncio
+
+    session_factory = async_sessionmaker(test_engine, expire_on_commit=False)
+
+    async def run() -> None:
+        async with session_factory() as reader:
+            loaded = await reader.scalar(
+                select(MealSlot).where(MealSlot.id == slot.id)
+            )
+            assert loaded is not None
+            assert loaded.version == 0
+            observed_version = loaded.version
+
+        # Concurrent writer commits version=1 before the "stale" writer updates.
+        async with session_factory() as winner:
+            await winner.execute(
+                update(MealSlot)
+                .where(MealSlot.id == slot.id, MealSlot.version == 0)
+                .values(version=1, status="confirmed")
+            )
+            await winner.commit()
+
+        async with session_factory() as stale_db:
+            member = await stale_db.scalar(
+                select(Member).where(Member.id == UUID(household["member"]["id"]))
+            )
+            hh = await stale_db.scalar(
+                select(Household).where(
+                    Household.id == UUID(household["household"]["id"])
+                )
+            )
+            assert member is not None and hh is not None
+            auth = AuthContext(member=member, household=hh)
+            with pytest.raises(ApiError) as exc_info:
+                await replace_menu(
+                    stale_db,
+                    auth,
+                    slot.id,
+                    MenuUpdate(dish_ids=[dish.id], expected_version=observed_version),
+                )
+            error = exc_info.value
+            assert error.status_code == 409
+            assert error.code == "version_conflict"
+            assert error.current_version == 1
+
+    asyncio.run(run())
