@@ -69,7 +69,7 @@ def test_menu_version_conflict_is_idempotent_under_stale_retry(
 
     stale = client.put(
         f"/api/meal-slots/{slot.id}/menu",
-        json={"dish_ids": [], "expected_version": 0},
+        json={"dish_ids": [str(dish.id)], "expected_version": 0},
     )
     assert stale.status_code == 409
     assert stale.json() == {
@@ -78,23 +78,23 @@ def test_menu_version_conflict_is_idempotent_under_stale_retry(
         "current_version": 1,
     }
 
-    # Retry with refreshed version succeeds and is idempotent for empty menu.
+    # Retry with refreshed version succeeds and is idempotent for the same dish set.
     refreshed = client.put(
         f"/api/meal-slots/{slot.id}/menu",
-        json={"dish_ids": [], "expected_version": 1},
+        json={"dish_ids": [str(dish.id)], "expected_version": 1},
     )
     assert refreshed.status_code == 200
     assert refreshed.json()["version"] == 2
-    assert refreshed.json()["menu"] == []
+    assert [item["dish_id"] for item in refreshed.json()["menu"]] == [str(dish.id)]
     assert refreshed.json()["status"] == "confirmed"
 
     again = client.put(
         f"/api/meal-slots/{slot.id}/menu",
-        json={"dish_ids": [], "expected_version": 2},
+        json={"dish_ids": [str(dish.id)], "expected_version": 2},
     )
     assert again.status_code == 200
     assert again.json()["version"] == 3
-    assert again.json()["menu"] == []
+    assert [item["dish_id"] for item in again.json()["menu"]] == [str(dish.id)]
 
 
 def test_replace_menu_update_sql_includes_expected_version(

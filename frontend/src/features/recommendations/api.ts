@@ -32,13 +32,22 @@ export function searchRecommendations(
   });
 }
 
+function resolveE2ERandomSeed(): number | undefined {
+  const raw = import.meta.env.VITE_E2E_RANDOM_SEED;
+  if (raw === undefined || raw === "") return undefined;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 export function randomRecommendation(
   filters: RecommendationFilters,
   seed?: number | null,
 ): Promise<RandomResponse> {
+  const resolvedSeed =
+    seed === undefined ? resolveE2ERandomSeed() : seed;
   return apiFetch("/api/recommendations/random", {
     method: "POST",
-    body: JSON.stringify(toBody(filters, seed)),
+    body: JSON.stringify(toBody(filters, resolvedSeed)),
   });
 }
 

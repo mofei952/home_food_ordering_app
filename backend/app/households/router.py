@@ -2,7 +2,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Response, status
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
@@ -35,10 +35,10 @@ from app.households.service import (
     require_owner,
 )
 from app.security import (
+    client_ip_from_request,
     generate_invite_code,
     hash_pin,
     hash_secret,
-    normalize_client_ip,
 )
 
 router = APIRouter(prefix="/api")
@@ -89,9 +89,8 @@ async def join_household(
     db: DbSession,
 ) -> AuthResponse:
     limiter = rate_limiter(request)
-    client_ip = normalize_client_ip(
-        request.client.host if request.client is not None else None
-    )
+    trusted = bool(getattr(request.app.state, "trusted_proxy_headers", False))
+    client_ip = client_ip_from_request(request, trusted_proxy_headers=trusted)
     join_key = ("invite", client_ip)
     if limiter.is_limited(join_key, JOIN_FAILURE_LIMIT):
         raise ApiError(429, "邀请码尝试次数过多", "join_rate_limited")
@@ -228,5 +227,7 @@ async def reset_member_pin(
     require_owner(auth)
     member = await household_member(db, auth, member_id)
     member.pin_hash = hash_pin(payload.pin)
+    # PIN reset invalidates all existing sessions for that member.
+    await db.execute(delete(Session).where(Session.member_id == member.id))
     await db.commit()
     return member

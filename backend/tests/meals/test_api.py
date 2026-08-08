@@ -127,11 +127,22 @@ def test_stale_menu_version_returns_conflict(
     )
     response = client.put(
         f"/api/meal-slots/{slot.id}/menu",
-        json={"dish_ids": [], "expected_version": 0},
+        json={"dish_ids": [str(dish.id)], "expected_version": 0},
     )
     assert response.status_code == 409
     assert response.json()["code"] == "version_conflict"
     assert response.json()["current_version"] == 1
+
+
+def test_empty_menu_confirm_returns_422(
+    client: TestClient, slot: SimpleNamespace
+) -> None:
+    response = client.put(
+        f"/api/meal-slots/{slot.id}/menu",
+        json={"dish_ids": [], "expected_version": 0},
+    )
+    assert response.status_code == 422
+    assert response.json()["code"] == "empty_menu"
 
 
 def test_accepts_more_than_ten_requests(

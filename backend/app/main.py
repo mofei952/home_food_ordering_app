@@ -23,8 +23,10 @@ def create_app(
 ) -> FastAPI:
     app_settings = settings or Settings()
     app = FastAPI(title="家庭点菜 API")
+    app.state.settings = app_settings
     app.state.rate_limiter = SlidingWindowRateLimiter(clock)
-    app.state.secure_cookies = app_settings.environment != "development"
+    app.state.secure_cookies = app_settings.resolve_secure_cookies()
+    app.state.trusted_proxy_headers = app_settings.trusted_proxy_headers
     app.state.storage = storage or build_storage(app_settings)
     install_error_handlers(app)
     app.include_router(households_router)

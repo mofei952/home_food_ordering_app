@@ -266,6 +266,9 @@ async def replace_menu(
     slot = await require_slot(db, auth.household.id, slot_id)
     was_confirmed = slot.status == "confirmed"
 
+    if not payload.dish_ids:
+        raise ApiError(422, "菜单不能为空", "empty_menu")
+
     dishes: list[Dish] = []
     seen: set[UUID] = set()
     for dish_id in payload.dish_ids:

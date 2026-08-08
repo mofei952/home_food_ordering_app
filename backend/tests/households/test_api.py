@@ -304,6 +304,8 @@ def test_only_owner_can_disable_or_reset_members(
             json={"pin": "1357"},
         )
         assert reset.status_code == 200
+        # Existing session must be revoked on PIN reset.
+        assert joined_client.get("/api/session").status_code == 401
         old_pin = joined_client.post(
             "/api/households/join",
             json={
@@ -322,6 +324,97 @@ def test_only_owner_can_disable_or_reset_members(
             },
         )
         assert new_pin.status_code == 200
+
+
+def test_pin_reset_revokes_member_sessions(
+    app: FastAPI, client: TestClient
+) -> None:
+    created = create_household(client)
+    with TestClient(app) as joined_client:
+        joined = joined_client.post(
+            "/api/households/join",
+            json={
+                "invite_code": created.json()["invite_code"],
+                "nickname": "小周",
+                "pin": "5678",
+            },
+        )
+        assert joined.status_code == 201
+        member_id = joined.json()["member"]["id"]
+        assert joined_client.get("/api/session").status_code == 200
+
+        reset = client.post(
+            f"/api/households/members/{member_id}/pin/reset",
+            json={"pin": "2468"},
+        )
+        assert reset.status_code == 200
+        assert joined_client.get("/api/session").status_code == 401
+
+
+def test_join_rate_limit_uses_forwarded_for_when_trusted(
+    app: FastAPI, client: TestClient, clock: MutableClock
+) -> None:
+    app.state.trusted_proxy_headers = True
+    payload = {
+        "invite_code": ALPHABET[0] * 8,
+        "nickname": "小周",
+        "pin": "5678",
+    }
+    for _ in range(10):
+        assert (
+            client.post(
+                "/api/households/join",
+                json=payload,
+                headers={"X-Forwarded-For": "203.0.113.10"},
+            ).status_code
+            == 404
+        )
+    assert (
+        client.post(
+            "/api/households/join",
+            json=payload,
+            headers={"X-Forwarded-For": "203.0.113.10"},
+        ).status_code
+        == 429
+    )
+    # A different forwarded client IP has its own bucket.
+    assert (
+        client.post(
+            "/api/households/join",
+            json=payload,
+            headers={"X-Forwarded-For": "203.0.113.11"},
+        ).status_code
+        == 404
+    )
+    clock.advance(15 * 60 + 1)
+
+
+def test_join_rate_limit_ignores_forwarded_for_when_untrusted(
+    client: TestClient,
+) -> None:
+    payload = {
+        "invite_code": ALPHABET[0] * 8,
+        "nickname": "小周",
+        "pin": "5678",
+    }
+    for index in range(10):
+        assert (
+            client.post(
+                "/api/households/join",
+                json=payload,
+                headers={"X-Forwarded-For": f"198.51.100.{index}"},
+            ).status_code
+            == 404
+        )
+    # Spoofed distinct X-Forwarded-For values still share the socket peer bucket.
+    assert (
+        client.post(
+            "/api/households/join",
+            json=payload,
+            headers={"X-Forwarded-For": "198.51.100.99"},
+        ).status_code
+        == 429
+    )
 
 
 def test_rotate_invite_invalidates_previous_code(
@@ -515,3 +608,17 @@ def test_session_cookie_is_secure_outside_development(
     app.state.secure_cookies = True
     response = create_household(client)
     assert "Secure" in response.headers["set-cookie"]
+
+
+def test_secure_cookies_setting_overrides_environment() -> None:
+    from app.config import Settings
+
+    assert (
+        Settings(environment="production", secure_cookies=False).resolve_secure_cookies()
+        is False
+    )
+    assert (
+        Settings(environment="development", secure_cookies=True).resolve_secure_cookies()
+        is True
+    )
+    assert Settings(environment="production").resolve_secure_cookies() is True

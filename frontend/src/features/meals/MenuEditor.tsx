@@ -74,7 +74,7 @@ export function MenuEditor({
       <button
         type="button"
         data-write="true"
-        disabled={busy}
+        disabled={busy || selected.length === 0}
         onClick={() => void handleConfirm()}
       >
         确认菜单

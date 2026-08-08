@@ -25,9 +25,13 @@ cp .env.example .env
 | 变量 | 说明 |
 | --- | --- |
 | `DATABASE_URL` | 异步 SQLAlchemy URL。Compose/Postgres 示例见 `.env.example`；本地 e2e 可用 `sqlite+aiosqlite:////tmp/family-menu-e2e.db` |
-| `ENVIRONMENT` | `development` 时 Cookie 不要求 Secure；生产用 `production` |
+| `ENVIRONMENT` | `development` 时 Cookie 默认不要求 Secure；生产用 `production` |
+| `SECURE_COOKIES` | 显式覆盖 Cookie Secure。本地 Compose 走 HTTP `:8080` 时设为 `false`（见 `compose.yaml`） |
+| `TRUSTED_PROXY_HEADERS` | `true` 时加入限流使用 `X-Forwarded-For` / `X-Real-IP`（Compose 在 Caddy 后设为 true） |
 | `IMAGE_STORAGE` | `s3`（默认）或 `memory`（本地/测试） |
-| `S3_ENDPOINT_URL` / `S3_ACCESS_KEY` / `S3_SECRET_KEY` / `S3_BUCKET` / `S3_REGION` | 对象存储（Compose 内为 MinIO） |
+| `S3_ENDPOINT_URL` | SDK 访问对象存储的内部地址（Compose 内为 `http://minio:9000`） |
+| `S3_PUBLIC_ENDPOINT_URL` | 浏览器可访问的签名 URL 主机（Compose：`http://127.0.0.1:9000`；未设则同 `S3_ENDPOINT_URL`） |
+| `S3_ACCESS_KEY` / `S3_SECRET_KEY` / `S3_BUCKET` / `S3_REGION` | 对象存储凭证与桶（Compose 内为 MinIO） |
 
 ## 数据库迁移
 
@@ -91,12 +95,14 @@ docker compose up -d --build
 curl -fsS http://127.0.0.1:8080/api/health
 ```
 
-首次启动后端前请对 Postgres 执行迁移（可在 backend 容器或本机指向 Compose 的 `DATABASE_URL`）：
+Backend 容器入口脚本会在启动 uvicorn 前执行 `alembic upgrade head`，无需手动迁移。
 
-```bash
-DATABASE_URL=postgresql+asyncpg://family_menu:family_menu@localhost:5432/family_menu \
-  uv run --directory backend alembic upgrade head
-```
+本地 HTTP 试跑要点：
+
+- `SECURE_COOKIES=false`：避免在明文 HTTP 下签发 Secure Cookie（移动浏览器会丢弃）
+- `TRUSTED_PROXY_HEADERS=true`：加入限流按真实客户端 IP 分桶
+- MinIO：`S3_ENDPOINT_URL=http://minio:9000`（容器内），`S3_PUBLIC_ENDPOINT_URL=http://127.0.0.1:9000`（浏览器签名 URL）
+- 端口：Caddy `8080`，Postgres `5432`，MinIO API `9000` / Console `9001`
 
 `deploy/Caddyfile` 保证浏览器只与同一来源通信，Session Cookie 不会变成跨站请求。
 
@@ -131,8 +137,9 @@ npm run test:e2e
 `scripts/verify.sh` 行为：
 
 1. ruff / mypy / pytest / 前端单测 / 生产构建  
-2. e2e：若本机有 `docker compose`，则 `docker compose up -d --build` 后对 Caddy 入口跑 Playwright；否则自动走本地 SQLite + Vite dev 代理栈  
-3. 可用 `E2E_FORCE_LOCAL=1` 强制本地路径
+2. e2e：**默认**本地 SQLite + Vite（已验证路径）；`E2E_USE_COMPOSE=1` 时才对 Compose/Caddy 跑 Playwright  
+3. 可选 `COMPOSE_SMOKE=1`：拉起 Compose 并检查 `/api/health`（依赖 entrypoint 迁移）  
+4. `E2E_RANDOM_SEED` / `VITE_E2E_RANDOM_SEED` 可注入前端随机推荐（测试用）
 
 ## 备份与恢复
 

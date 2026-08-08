@@ -12,6 +12,7 @@ from app.images.storage import (
     StorageConfigError,
     build_storage,
 )
+from tests.conftest import MutableClock
 
 
 def _create_household(
@@ -173,3 +174,59 @@ def test_build_storage_falls_back_in_development_without_endpoint() -> None:
         )
     )
     assert isinstance(storage, InMemoryStorage)
+
+
+def test_build_storage_uses_public_endpoint_for_signing(monkeypatch: pytest.MonkeyPatch) -> None:
+    endpoints: list[str] = []
+
+    class FakeClient:
+        def __init__(self, endpoint_url: str) -> None:
+            self.endpoint_url = endpoint_url
+
+        def generate_presigned_url(self, *_args: object, **_kwargs: object) -> str:
+            return f"{self.endpoint_url}/signed"
+
+        def put_object(self, **_kwargs: object) -> None:
+            return None
+
+        def delete_object(self, **_kwargs: object) -> None:
+            return None
+
+    def fake_client(
+        _service: str,
+        *,
+        endpoint_url: str,
+        **_kwargs: object,
+    ) -> FakeClient:
+        endpoints.append(endpoint_url)
+        return FakeClient(endpoint_url)
+
+    monkeypatch.setattr("app.images.storage.boto3.client", fake_client)
+    storage = build_storage(
+        Settings(
+            environment="production",
+            image_storage="s3",
+            s3_endpoint_url="http://minio:9000",
+            s3_public_endpoint_url="http://127.0.0.1:9000",
+        )
+    )
+    assert isinstance(storage, S3Storage)
+    assert endpoints == ["http://minio:9000", "http://127.0.0.1:9000"]
+    assert storage.signed_get_url("household/key.webp").startswith(
+        "http://127.0.0.1:9000/"
+    )
+
+
+def test_image_upload_rate_limited_per_member(
+    client: TestClient, app: FastAPI, clock: MutableClock
+) -> None:
+    app.state.settings.image_upload_limit = 3
+    files = {"file": ("dish.webp", b"valid-image", "image/webp")}
+    for _ in range(3):
+        assert client.post("/api/images", files=files).status_code == 201
+    limited = client.post("/api/images", files=files)
+    assert limited.status_code == 429
+    assert limited.json()["code"] == "image_rate_limited"
+    clock.advance(15 * 60 + 1)
+    assert client.post("/api/images", files=files).status_code == 201
+

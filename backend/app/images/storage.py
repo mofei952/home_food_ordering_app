@@ -47,8 +47,10 @@ class S3Storage:
         *,
         client: BaseClient,
         bucket: str,
+        signing_client: BaseClient | None = None,
     ) -> None:
         self._client = client
+        self._signing_client = signing_client or client
         self._bucket = bucket
 
     def put(self, key: str, data: bytes, content_type: str) -> None:
@@ -66,7 +68,7 @@ class S3Storage:
 
     def signed_get_url(self, key: str, expires_seconds: int = 900) -> str:
         try:
-            return self._client.generate_presigned_url(
+            return self._signing_client.generate_presigned_url(
                 "get_object",
                 Params={"Bucket": self._bucket, "Key": key},
                 ExpiresIn=expires_seconds,
@@ -93,6 +95,16 @@ def _allow_memory_without_s3(settings: Settings) -> bool:
     # Explicit IMAGE_STORAGE=memory is preferred; this path is only a
     # development/test convenience with a warning. Production must configure S3.
     return settings.environment in {"development", "test"}
+
+
+def _boto_client(settings: Settings, *, endpoint_url: str) -> BaseClient:
+    return boto3.client(
+        "s3",
+        endpoint_url=endpoint_url,
+        aws_access_key_id=settings.s3_access_key,
+        aws_secret_access_key=settings.s3_secret_key,
+        region_name=settings.s3_region,
+    )
 
 
 def build_storage(settings: Settings) -> Storage:
@@ -125,11 +137,16 @@ def build_storage(settings: Settings) -> Storage:
             "only for non-production local use."
         )
 
-    client = boto3.client(
-        "s3",
-        endpoint_url=settings.s3_endpoint_url,
-        aws_access_key_id=settings.s3_access_key,
-        aws_secret_access_key=settings.s3_secret_key,
-        region_name=settings.s3_region,
+    client = _boto_client(settings, endpoint_url=settings.s3_endpoint_url)
+    public_endpoint = (settings.s3_public_endpoint_url or settings.s3_endpoint_url).rstrip(
+        "/"
     )
-    return S3Storage(client=client, bucket=settings.s3_bucket)
+    internal_endpoint = settings.s3_endpoint_url.rstrip("/")
+    signing_client: BaseClient | None = None
+    if public_endpoint != internal_endpoint:
+        signing_client = _boto_client(settings, endpoint_url=public_endpoint)
+    return S3Storage(
+        client=client,
+        signing_client=signing_client,
+        bucket=settings.s3_bucket,
+    )

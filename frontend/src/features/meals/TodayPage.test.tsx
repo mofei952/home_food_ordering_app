@@ -236,6 +236,7 @@ describe("TodayPage", () => {
     render(<TodayPage session={session} />);
     await screen.findByLabelText("餐次状态");
 
+    fireEvent.click(screen.getByRole("button", { name: "加入最终菜单：番茄炒蛋" }));
     fireEvent.click(screen.getByRole("button", { name: "确认菜单" }));
 
     expect(
