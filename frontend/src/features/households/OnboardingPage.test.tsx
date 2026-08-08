@@ -83,8 +83,8 @@ describe("FamilyPage", () => {
     render(<FamilyPage session={session} onLoggedOut={vi.fn()} />);
     expect(screen.getByRole("heading", { name: "我家" })).toBeVisible();
     expect(screen.getByText("当前角色：创建者")).toBeVisible();
-    expect(screen.getByText("小林")).toBeVisible();
-    expect(screen.getByText("小周")).toBeVisible();
+    expect(screen.getByText(/小林/)).toBeVisible();
+    expect(screen.getByText(/小周/)).toBeVisible();
     expect(screen.getByRole("button", { name: "刷新邀请码" })).toBeVisible();
   });
 });
