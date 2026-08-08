@@ -115,7 +115,7 @@ async def member_for_nickname(
     return await db.scalar(
         select(Member).where(
             Member.household_id == household_id,
-            func.lower(Member.nickname) == nickname.casefold(),
+            func.lower(Member.nickname) == nickname.lower(),
         )
     )
 
