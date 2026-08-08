@@ -173,7 +173,7 @@ export function DishForm({
           setPreviewUrl(next.previewUrl);
         }}
       />
-      <div className="form-actions">
+      <div className="form-actions form-actions--sticky">
         <button type="submit" disabled={submitting}>
           {submitLabel}
         </button>
