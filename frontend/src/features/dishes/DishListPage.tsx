@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { ApiError } from "../../api/client";
 import type { components } from "../../api/generated";
+import { BottomSheet } from "../../ui/BottomSheet";
+import { Chip } from "../../ui/Chip";
+import { DishCard } from "../../ui/DishCard";
+import { IconPlus } from "../../ui/icons";
+import { useToast } from "../../ui/Toast";
 import {
   archiveDish,
   createDish,
@@ -27,13 +32,16 @@ const CATEGORIES: Array<DishCategory | ""> = [
 ];
 
 export function DishListPage({ members }: DishListPageProps) {
+  const { push: toast } = useToast();
   const [dishes, setDishes] = useState<DishRead[]>([]);
   const [cookId, setCookId] = useState("");
   const [category, setCategory] = useState<DishCategory | "">("");
+  const [query, setQuery] = useState("");
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<DishRead | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +70,12 @@ export function DishListPage({ members }: DishListPageProps) {
     };
   }, [cookId, category]);
 
+  const visibleDishes = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return dishes;
+    return dishes.filter((dish) => dish.name.toLowerCase().includes(q));
+  }, [dishes, query]);
+
   async function reload() {
     setLoading(true);
     setError(undefined);
@@ -80,7 +94,8 @@ export function DishListPage({ members }: DishListPageProps) {
 
   async function handleCreate(input: DishInput) {
     await createDish(input);
-    setCreating(false);
+    setSheetOpen(false);
+    toast("菜品已添加");
     await reload();
   }
 
@@ -88,6 +103,7 @@ export function DishListPage({ members }: DishListPageProps) {
     if (!editing) return;
     await updateDish(editing.id, input);
     setEditing(null);
+    toast("已保存");
     await reload();
   }
 
@@ -96,117 +112,163 @@ export function DishListPage({ members }: DishListPageProps) {
     if (!confirmed) return;
     try {
       await archiveDish(dish.id);
+      toast("已归档");
       await reload();
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : "归档失败");
     }
   }
 
-  if (creating) {
-    return (
-      <section>
-        <h2>新增菜品</h2>
-        <DishForm
-          members={members}
-          onSubmit={handleCreate}
-          onCancel={() => setCreating(false)}
-          submitLabel="创建"
-        />
-      </section>
-    );
+  function openCreate() {
+    setEditing(null);
+    setSheetOpen(true);
   }
 
-  if (editing) {
-    return (
-      <section>
-        <h2>编辑菜品</h2>
-        <DishForm
-          members={members}
-          initial={{
-            name: editing.name,
-            category: editing.category,
-            cookIds: editing.cooks.map((cook) => cook.id),
-            ingredients: editing.ingredients.map((item) => item.name),
-            imageKey: editing.image_key ?? null,
-            imageUrl: editing.image_url,
-          }}
-          onSubmit={handleUpdate}
-          onCancel={() => setEditing(null)}
-        />
-      </section>
-    );
+  function openEdit(dish: DishRead) {
+    setEditing(dish);
+    setSheetOpen(true);
   }
 
   return (
-    <section>
-      <h2>菜品</h2>
-      {error && <p role="alert">{error}</p>}
-      <div>
-        <label>
-          类别
-          <select
-            value={category}
-            onChange={(event) =>
-              setCategory(event.target.value as DishCategory | "")
-            }
-          >
-            <option value="">全部类别</option>
-            {CATEGORIES.filter(Boolean).map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          制作者
-          <select
-            value={cookId}
-            onChange={(event) => setCookId(event.target.value)}
-          >
-            <option value="">全部制作者</option>
-            {members.map((member) => (
-              <option key={member.id} value={member.id}>
-                {member.nickname}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="button" onClick={() => setCreating(true)}>
-          新增菜品
+    <div className="page">
+      <div className="search-bar">
+        <input
+          type="search"
+          placeholder="搜索菜名"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          aria-label="搜索菜名"
+        />
+        <button
+          type="button"
+          className="btn--ghost"
+          onClick={() => setFilterOpen(true)}
+        >
+          筛选
         </button>
       </div>
 
+      {error ? (
+        <p className="alert-inline" role="alert">
+          {error}
+        </p>
+      ) : null}
+
       {loading ? (
-        <p>正在加载…</p>
-      ) : dishes.length === 0 ? (
-        <p>还没有菜品，先录入几道家常菜吧。</p>
+        <div className="dish-grid">
+          <div className="skeleton" style={{ height: "12rem" }} />
+          <div className="skeleton" style={{ height: "12rem" }} />
+        </div>
+      ) : visibleDishes.length === 0 ? (
+        <div className="empty-state">
+          <p className="empty-state__title">还没有菜品</p>
+          <p>录入几道家常菜，点菜会轻松很多</p>
+          <button type="button" onClick={openCreate}>
+            新增第一道菜
+          </button>
+        </div>
       ) : (
-        <ul>
-          {dishes.map((dish) => (
-            <li key={dish.id}>
-              <article>
-                <h3>{dish.name}</h3>
-                <p>{dish.category}</p>
-                <p>制作者：{dish.cooks.map((cook) => cook.nickname).join("、")}</p>
-                <p>
-                  食材：{dish.ingredients.map((item) => item.name).join("、")}
-                </p>
-                <button type="button" onClick={() => setEditing(dish)}>
-                  编辑
-                </button>
-                <button
-                  type="button"
-                  data-write="true"
-                  onClick={() => void handleArchive(dish)}
-                >
-                  归档
-                </button>
-              </article>
-            </li>
+        <div className="dish-grid">
+          {visibleDishes.map((dish) => (
+            <DishCard
+              key={dish.id}
+              name={dish.name}
+              category={dish.category}
+              imageUrl={dish.image_url}
+              subtitle={`${dish.cooks.map((c) => c.nickname).join("、")}`}
+              footer={
+                <div className="dish-card__actions">
+                  <button type="button" onClick={() => openEdit(dish)}>
+                    编辑
+                  </button>
+                  <button
+                    type="button"
+                    className="btn--ghost"
+                    data-write="true"
+                    onClick={() => void handleArchive(dish)}
+                  >
+                    归档
+                  </button>
+                </div>
+              }
+            />
           ))}
-        </ul>
+        </div>
       )}
-    </section>
+
+      <button
+        type="button"
+        className="fab"
+        aria-label="新增菜品"
+        onClick={openCreate}
+      >
+        <IconPlus />
+      </button>
+
+      <BottomSheet
+        open={filterOpen}
+        title="筛选"
+        onClose={() => setFilterOpen(false)}
+      >
+        <p className="page__lead">类别</p>
+        <div className="chip-row" style={{ marginBottom: "1rem" }}>
+          {CATEGORIES.map((item) => (
+            <Chip
+              key={item || "all"}
+              selected={category === item}
+              onClick={() => setCategory(item)}
+            >
+              {item || "全部"}
+            </Chip>
+          ))}
+        </div>
+        <p className="page__lead">制作者</p>
+        <div className="chip-row">
+          <Chip selected={cookId === ""} onClick={() => setCookId("")}>
+            全部
+          </Chip>
+          {members.map((member) => (
+            <Chip
+              key={member.id}
+              selected={cookId === member.id}
+              onClick={() => setCookId(member.id)}
+            >
+              {member.nickname}
+            </Chip>
+          ))}
+        </div>
+      </BottomSheet>
+
+      <BottomSheet
+        open={sheetOpen}
+        title={editing ? "编辑菜品" : "新增菜品"}
+        onClose={() => {
+          setSheetOpen(false);
+          setEditing(null);
+        }}
+      >
+        <DishForm
+          members={members}
+          initial={
+            editing
+              ? {
+                  name: editing.name,
+                  category: editing.category,
+                  cookIds: editing.cooks.map((cook) => cook.id),
+                  ingredients: editing.ingredients.map((item) => item.name),
+                  imageKey: editing.image_key ?? null,
+                  imageUrl: editing.image_url,
+                }
+              : undefined
+          }
+          onSubmit={editing ? handleUpdate : handleCreate}
+          onCancel={() => {
+            setSheetOpen(false);
+            setEditing(null);
+          }}
+          submitLabel={editing ? "保存" : "创建"}
+        />
+      </BottomSheet>
+    </div>
   );
 }

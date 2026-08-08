@@ -1,10 +1,17 @@
 import { NavLink } from "react-router-dom";
 
+import {
+  IconDishes,
+  IconFamily,
+  IconSparkles,
+  IconToday,
+} from "../ui/icons";
+
 const DESTINATIONS = [
-  { to: "/", label: "今天", end: true },
-  { to: "/dishes", label: "菜品", end: false },
-  { to: "/choose", label: "帮我选", end: false },
-  { to: "/family", label: "家庭", end: false },
+  { to: "/", label: "今天", end: true, Icon: IconToday },
+  { to: "/dishes", label: "菜品", end: false, Icon: IconDishes },
+  { to: "/choose", label: "帮我选", end: false, Icon: IconSparkles },
+  { to: "/family", label: "家庭", end: false, Icon: IconFamily },
 ] as const;
 
 export function BottomNav() {
@@ -19,7 +26,8 @@ export function BottomNav() {
             isActive ? "bottom-nav__link is-active" : "bottom-nav__link"
           }
         >
-          {item.label}
+          <item.Icon />
+          <span>{item.label}</span>
         </NavLink>
       ))}
     </nav>

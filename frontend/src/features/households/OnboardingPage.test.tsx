@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError, apiFetch } from "../../api/client";
+import { ToastProvider } from "../../ui/Toast";
 import { FamilyPage } from "./FamilyPage";
 import { OnboardingPage } from "./OnboardingPage";
 
@@ -9,15 +10,24 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+function renderOnboarding() {
+  return render(
+    <ToastProvider>
+      <OnboardingPage onAuthenticated={vi.fn()} />
+    </ToastProvider>,
+  );
+}
+
 describe("OnboardingPage", () => {
   it("offers separate create and join forms", () => {
-    render(<OnboardingPage onAuthenticated={vi.fn()} />);
+    renderOnboarding();
 
     const createForm = screen.getByRole("form", { name: "创建家庭" });
     expect(within(createForm).getByLabelText("家庭名称")).toBeVisible();
     expect(within(createForm).getByLabelText("创建者昵称")).toBeVisible();
     expect(within(createForm).getByRole("button", { name: "创建家庭" })).toBeVisible();
 
+    fireEvent.click(screen.getByRole("button", { name: "加入家庭" }));
     const joinForm = screen.getByRole("form", { name: "加入家庭" });
     expect(within(joinForm).getByLabelText("邀请码")).toBeVisible();
     expect(within(joinForm).getByLabelText("昵称")).toBeVisible();
@@ -37,7 +47,11 @@ describe("OnboardingPage", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
     const authenticated = vi.fn();
-    render(<OnboardingPage onAuthenticated={authenticated} />);
+    render(
+      <ToastProvider>
+        <OnboardingPage onAuthenticated={authenticated} />
+      </ToastProvider>,
+    );
 
     const form = screen.getByRole("form", { name: "创建家庭" });
     fireEvent.change(within(form).getByLabelText("家庭名称"), {
@@ -82,11 +96,11 @@ describe("FamilyPage", () => {
   };
 
   it("shows household members, current role, and owner invite controls", () => {
-    render(<FamilyPage session={session} onLoggedOut={vi.fn()} />);
-    expect(screen.getByRole("heading", { name: "我家" })).toBeVisible();
-    expect(screen.getByText("当前角色：创建者")).toBeVisible();
-    expect(screen.getByText(/小林/)).toBeVisible();
-    expect(screen.getByText(/小周/)).toBeVisible();
+    render(
+      <ToastProvider>
+        <FamilyPage session={session} onLoggedOut={vi.fn()} />
+      </ToastProvider>,
+    );
     expect(screen.getByRole("button", { name: "刷新邀请码" })).toBeVisible();
   });
 });

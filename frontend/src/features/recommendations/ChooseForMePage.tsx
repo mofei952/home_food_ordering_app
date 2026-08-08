@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 
 import { ApiError } from "../../api/client";
 import type { components } from "../../api/generated";
+import { Chip } from "../../ui/Chip";
+import { DishCard } from "../../ui/DishCard";
+import { SegmentedControl } from "../../ui/SegmentedControl";
+import { useToast } from "../../ui/Toast";
 import { recordMealOpened } from "../history/api";
 import {
   defaultMealType,
@@ -26,9 +30,10 @@ type DishCategory = components["schemas"]["DishCreate"]["category"];
 
 const CATEGORIES: DishCategory[] = ["荤菜", "素菜", "主食", "汤", "其他"];
 
+type Tab = "random" | "ingredient";
+
 interface ChooseForMePageProps {
   session: SessionResponse;
-  /** Optional override; when omitted the page resolves today's slot itself. */
   mealSlotId?: string | null;
 }
 
@@ -47,28 +52,39 @@ function DishResult({
   onAdd,
   busy = false,
   addLabel = "加入点菜",
+  variant = "ready",
 }: {
   dish: RecommendedDishRead;
   onAdd?: (dish: RecommendedDishRead) => void;
   busy?: boolean;
   addLabel?: string;
+  variant?: "ready" | "missing";
 }) {
   return (
-    <article>
-      <h4>{dish.name}</h4>
-      <p>类别：{dish.category}</p>
-      <p>制作者：{formatCooks(dish)}</p>
-      <p>食材：{formatIngredients(dish.ingredients)}</p>
-      {dish.missing_ingredients.length > 0 ? (
-        <p>缺少食材：{formatIngredients(dish.missing_ingredients)}</p>
-      ) : null}
-      <p>
-        上次食用：
-        {dish.last_eaten_on ?? "从未吃过"}
+    <article
+      className={
+        variant === "missing"
+          ? "card result-card result-card--missing"
+          : "card result-card"
+      }
+    >
+      <h4 style={{ margin: "0 0 0.5rem" }}>{dish.name}</h4>
+      <p className="page__lead" style={{ margin: "0 0 0.25rem" }}>
+        {dish.category} · {formatCooks(dish)}
       </p>
+      <p className="page__lead" style={{ margin: 0 }}>
+        食材：{formatIngredients(dish.ingredients)}
+      </p>
+      {dish.missing_ingredients.length > 0 ? (
+        <p className="page__lead" style={{ margin: "0.35rem 0 0" }}>
+          缺少：{formatIngredients(dish.missing_ingredients)}
+        </p>
+      ) : null}
       {onAdd ? (
         <button
           type="button"
+          className="btn--soft"
+          style={{ width: "100%", marginTop: "0.75rem" }}
           data-write="true"
           disabled={busy}
           onClick={() => onAdd(dish)}
@@ -84,6 +100,8 @@ export function ChooseForMePage({
   session,
   mealSlotId = null,
 }: ChooseForMePageProps) {
+  const { push: toast } = useToast();
+  const [tab, setTab] = useState<Tab>("random");
   const [mealType, setMealType] = useState<MealType>(() =>
     defaultMealType(session.household.timezone),
   );
@@ -103,7 +121,6 @@ export function ChooseForMePage({
   const [error, setError] = useState<string>();
   const [relaxable, setRelaxable] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
-  const [acceptedMessage, setAcceptedMessage] = useState<string>();
 
   useEffect(() => {
     if (mealSlotId) {
@@ -138,26 +155,6 @@ export function ChooseForMePage({
     };
   }
 
-  function formatActiveFilters(): string {
-    const parts: string[] = [];
-    if (cookIds.length > 0) {
-      const names = session.members
-        .filter((member) => cookIds.includes(member.id))
-        .map((member) => member.nickname);
-      parts.push(`制作者：${names.join("、")}`);
-    }
-    if (categories.length > 0) {
-      parts.push(`类别：${categories.join("、")}`);
-    }
-    if (availableIngredientIds.length > 0) {
-      const names = availableIngredientIds.map(
-        (id) => ingredientNames[id] ?? id,
-      );
-      parts.push(`现有食材：${names.join("、")}`);
-    }
-    return parts.length > 0 ? parts.join("；") : "无";
-  }
-
   function toggleValue(list: string[], value: string): string[] {
     return list.includes(value)
       ? list.filter((item) => item !== value)
@@ -182,7 +179,6 @@ export function ChooseForMePage({
     setBusy(true);
     setError(undefined);
     setRelaxable([]);
-    setAcceptedMessage(undefined);
     try {
       const response = await searchRecommendations(currentFilters());
       setResults(response);
@@ -204,7 +200,6 @@ export function ChooseForMePage({
     setBusy(true);
     setError(undefined);
     setRelaxable([]);
-    setAcceptedMessage(undefined);
     try {
       const response = await randomRecommendation(currentFilters(), seed);
       setPicked(response.dish);
@@ -234,10 +229,8 @@ export function ChooseForMePage({
         return;
       }
       await putMealRequest(slotId, dish.id);
-      void recordMealOpened(slotId, decisionSource).catch(() => {
-        /* non-blocking analytics */
-      });
-      setAcceptedMessage("已加入今晚想吃清单");
+      void recordMealOpened(slotId, decisionSource).catch(() => {});
+      toast("已加入今晚想吃清单");
       setPicked(dish);
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : "加入点菜失败");
@@ -246,99 +239,72 @@ export function ChooseForMePage({
     }
   }
 
-  async function handleAccept() {
-    if (!picked) return;
-    await acceptDish(picked, "random");
-  }
-
-  async function handleAddFromSearch(dish: RecommendedDishRead) {
-    await acceptDish(dish, "ingredient");
-  }
-
-  return (
-    <section aria-label="帮我选">
-      <h2>帮我选</h2>
-
-      <fieldset>
-        <legend>餐次</legend>
-        {(["lunch", "dinner"] as const).map((type) => (
-          <button
-            key={type}
-            type="button"
-            aria-pressed={mealType === type}
-            disabled={busy || mealSlotId != null}
-            onClick={() => setMealType(type)}
-          >
-            {MEAL_TYPE_LABELS[type]}
-          </button>
-        ))}
-      </fieldset>
-
-      <fieldset>
-        <legend>制作者</legend>
-        {session.members
-          .filter((member) => member.status === "active")
-          .map((member) => (
-            <label key={member.id}>
-              <input
-                type="checkbox"
-                checked={cookIds.includes(member.id)}
-                onChange={() => setCookIds(toggleValue(cookIds, member.id))}
-              />
-              {member.nickname}
-            </label>
-          ))}
-      </fieldset>
-
-      <fieldset>
-        <legend>类别</legend>
-        {CATEGORIES.map((category) => (
-          <label key={category}>
-            <input
-              type="checkbox"
-              checked={categories.includes(category)}
-              onChange={() =>
+  const filterSection = (
+    <>
+      <SegmentedControl
+        aria-label="餐次"
+        value={mealType}
+        disabled={busy || mealSlotId != null}
+        onChange={setMealType}
+        options={(["lunch", "dinner"] as const).map((type) => ({
+          value: type,
+          label: MEAL_TYPE_LABELS[type],
+        }))}
+      />
+      <div>
+        <p className="page__lead">制作者</p>
+        <div className="chip-row">
+          {session.members
+            .filter((member) => member.status === "active")
+            .map((member) => (
+              <Chip
+                key={member.id}
+                selected={cookIds.includes(member.id)}
+                onClick={() =>
+                  setCookIds(toggleValue(cookIds, member.id))
+                }
+              >
+                {member.nickname}
+              </Chip>
+            ))}
+        </div>
+      </div>
+      <div>
+        <p className="page__lead">类别</p>
+        <div className="chip-row">
+          {CATEGORIES.map((category) => (
+            <Chip
+              key={category}
+              selected={categories.includes(category)}
+              onClick={() =>
                 setCategories(toggleValue(categories, category))
               }
-            />
-            {category}
-          </label>
-        ))}
-      </fieldset>
+            >
+              {category}
+            </Chip>
+          ))}
+        </div>
+      </div>
+    </>
+  );
 
-      <IngredientPicker
-        selectedIds={availableIngredientIds}
-        onChange={setAvailableIngredientIds}
-        onToggleIngredient={(ingredient, selected) => {
-          setIngredientNames((current) => {
-            if (selected) {
-              return { ...current, [ingredient.id]: ingredient.name };
-            }
-            const next = { ...current };
-            delete next[ingredient.id];
-            return next;
-          });
-        }}
+  return (
+    <div className="page" aria-label="帮我选">
+      <SegmentedControl
+        aria-label="帮我选模式"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: "random", label: "随机一道" },
+          { value: "ingredient", label: "按食材找" },
+        ]}
       />
 
-      <div>
-        <button type="button" disabled={busy} onClick={() => void handleSearch()}>
-          按食材查找
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void handleRandom()}
-        >
-          随机一道
-        </button>
-      </div>
-
       {error ? (
-        <div role="alert">
-          <p>{error}</p>
+        <div className="alert-inline" role="alert">
+          <p style={{ margin: 0 }}>{error}</p>
           {relaxable.length > 0 ? (
-            <p>
+            <p style={{ margin: "0.35rem 0 0" }}>
               可放宽：
               {relaxable.map((key) => FILTER_LABELS[key] ?? key).join("、")}
             </p>
@@ -346,67 +312,131 @@ export function ChooseForMePage({
         </div>
       ) : null}
 
-      {acceptedMessage ? <p>{acceptedMessage}</p> : null}
-
-      {picked ? (
-        <section aria-label="随机结果">
-          <h3>随机结果</h3>
-          <div data-testid="selected-dish" data-dish-id={picked.id}>
-            <DishResult dish={picked} />
+      {tab === "random" ? (
+        <div className="choose-panel">
+          {filterSection}
+          <IngredientPicker
+            selectedIds={availableIngredientIds}
+            onChange={setAvailableIngredientIds}
+            onToggleIngredient={(ingredient, selected) => {
+              setIngredientNames((current) => {
+                if (selected) {
+                  return { ...current, [ingredient.id]: ingredient.name };
+                }
+                const next = { ...current };
+                delete next[ingredient.id];
+                return next;
+              });
+            }}
+          />
+          <div className="random-stage">
+            {picked ? (
+              <div className="random-stage__card" style={{ width: "100%" }}>
+                <section aria-label="随机结果">
+                  <div data-testid="selected-dish" data-dish-id={picked.id}>
+                    <DishCard
+                      name={picked.name}
+                      category={picked.category}
+                      subtitle={`${formatCooks(picked)} · ${formatIngredients(picked.ingredients)}`}
+                    />
+                  </div>
+                  <div className="form-actions" style={{ marginTop: "0.75rem" }}>
+                    <button
+                      type="button"
+                      data-write="true"
+                      disabled={busy}
+                      onClick={() => void acceptDish(picked, "random")}
+                    >
+                      就吃这个
+                    </button>
+                    <button
+                      type="button"
+                      className="btn--ghost"
+                      disabled={busy}
+                      onClick={() => void handleRandom()}
+                    >
+                      换一道
+                    </button>
+                  </div>
+                </section>
+              </div>
+            ) : (
+              <div className="card" style={{ width: "100%", textAlign: "center" }}>
+                <p className="page__lead">选好筛选条件，让应用帮你想一道</p>
+                <button
+                  type="button"
+                  disabled={busy}
+                  aria-label="开始随机"
+                  onClick={() => void handleRandom()}
+                >
+                  随机一道
+                </button>
+              </div>
+            )}
           </div>
-          <p>匹配条件：{formatActiveFilters()}</p>
+        </div>
+      ) : (
+        <div className="choose-panel">
+          {filterSection}
+          <IngredientPicker
+            selectedIds={availableIngredientIds}
+            onChange={setAvailableIngredientIds}
+            onToggleIngredient={(ingredient, selected) => {
+              setIngredientNames((current) => {
+                if (selected) {
+                  return { ...current, [ingredient.id]: ingredient.name };
+                }
+                const next = { ...current };
+                delete next[ingredient.id];
+                return next;
+              });
+            }}
+          />
           <button
             type="button"
-            data-write="true"
             disabled={busy}
-            onClick={() => void handleAccept()}
+            onClick={() => void handleSearch()}
           >
-            就吃这个
+            按食材查找
           </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void handleRandom()}
-          >
-            换一道
-          </button>
-        </section>
-      ) : null}
 
-      {results ? (
-        <>
-          <section aria-label="现在就能做">
-            <h3>现在就能做</h3>
-            {results.ready.length === 0 ? (
-              <p>暂无</p>
-            ) : (
-              results.ready.map((dish) => (
-                <DishResult
-                  key={dish.id}
-                  dish={dish}
-                  busy={busy}
-                  onAdd={(item) => void handleAddFromSearch(item)}
-                />
-              ))
-            )}
-          </section>
-          <section aria-label="再补一种即可">
-            <h3>再补一种即可</h3>
-            {results.one_missing.length === 0 ? (
-              <p>暂无</p>
-            ) : (
-              results.one_missing.map((dish) => (
-                <DishResult
-                  key={dish.id}
-                  dish={dish}
-                  busy={busy}
-                  onAdd={(item) => void handleAddFromSearch(item)}
-                />
-              ))
-            )}
-          </section>
-        </>
-      ) : null}
-    </section>
+          {results ? (
+            <>
+              <section aria-label="现在就能做">
+                <h3 style={{ fontSize: "var(--text-title)" }}>现在就能做</h3>
+                {results.ready.length === 0 ? (
+                  <p className="page__lead">暂无</p>
+                ) : (
+                  results.ready.map((dish) => (
+                    <DishResult
+                      key={dish.id}
+                      dish={dish}
+                      busy={busy}
+                      onAdd={(item) => void acceptDish(item, "ingredient")}
+                    />
+                  ))
+                )}
+              </section>
+              <section aria-label="再补一种即可">
+                <h3 style={{ fontSize: "var(--text-title)" }}>再补一种即可</h3>
+                {results.one_missing.length === 0 ? (
+                  <p className="page__lead">暂无</p>
+                ) : (
+                  results.one_missing.map((dish) => (
+                    <DishResult
+                      key={dish.id}
+                      dish={dish}
+                      variant="missing"
+                      busy={busy}
+                      onAdd={(item) => void acceptDish(item, "ingredient")}
+                    />
+                  ))
+                )}
+              </section>
+            </>
+          ) : null}
+        </div>
+      )}
+    </div>
   );
 }

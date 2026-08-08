@@ -1,21 +1,4 @@
-:root {
-  color-scheme: light;
-  --color-bg: #fffaf0;
-  --color-bg-accent: #ffedd5;
-  --color-ink: #1c1917;
-  --color-muted: #57534e;
-  --color-brand: #b45309;
-  --color-brand-strong: #92400e;
-  --color-surface: #fff7ed;
-  --color-border: #fdba74;
-  --color-focus: #0f766e;
-  --color-danger-bg: #fff1f2;
-  --color-danger-ink: #9f1239;
-  --nav-height: 64px;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --font-sans: "Source Han Sans SC", "Noto Sans SC", "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-}
+@import "./tokens.css";
 
 *,
 *::before,
@@ -32,6 +15,7 @@ body,
 body {
   margin: 0;
   font-family: var(--font-sans);
+  font-size: var(--text-body);
   color: var(--color-ink);
   background:
     radial-gradient(120% 80% at 0% 0%, #ffedd5 0%, transparent 55%),
@@ -43,10 +27,11 @@ body {
 img {
   max-width: 100%;
   height: auto;
+  display: block;
 }
 
 a {
-  color: inherit;
+  color: var(--color-brand);
 }
 
 :focus-visible {
@@ -64,12 +49,21 @@ textarea {
 button {
   min-height: 44px;
   min-width: 44px;
-  padding: 0.55rem 0.9rem;
-  border-radius: 0.65rem;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-brand);
   background: var(--color-brand);
-  color: #fffaf0;
+  color: #fffbf7;
   cursor: pointer;
+  font-weight: 600;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 button:disabled {
@@ -77,91 +71,73 @@ button:disabled {
   cursor: not-allowed;
 }
 
-button[type="button"]:not(.primary) {
+button.btn--ghost,
+button[type="button"].btn--ghost {
   background: var(--color-surface);
   color: var(--color-brand-strong);
+  border-color: var(--color-border);
 }
 
-main {
-  width: min(100%, 40rem);
-  margin: 0 auto;
-  padding: 1rem 1rem calc(var(--nav-height) + var(--safe-bottom) + 1.25rem);
-}
-
-h1 {
-  margin: 0 0 0.75rem;
-  font-size: clamp(1.6rem, 5vw, 2rem);
-  letter-spacing: 0.02em;
+button.btn--soft {
+  background: var(--color-brand-soft);
   color: var(--color-brand-strong);
+  border-color: transparent;
 }
 
-.app-shell {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-}
-
-.app-shell__content {
-  flex: 1;
-  width: min(100%, 40rem);
-  margin: 0 auto;
-  padding: 0 1rem 1rem;
-  overflow-x: hidden;
-}
-
-.network-banner {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  margin: 0;
-  padding: 0.75rem 1rem;
+button.btn--danger {
   background: var(--color-danger-bg);
   color: var(--color-danger-ink);
-  text-align: center;
-  font-size: 0.95rem;
+  border-color: #fecdd3;
 }
 
-.bottom-nav {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 30;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.25rem;
-  min-height: calc(var(--nav-height) + var(--safe-bottom));
-  padding: 0.35rem 0.5rem calc(0.35rem + var(--safe-bottom));
-  background: rgba(255, 250, 240, 0.96);
-  border-top: 1px solid var(--color-border);
-  backdrop-filter: blur(8px);
-}
-
-.bottom-nav__link {
+button.btn--icon {
+  min-width: 44px;
+  padding: 0.5rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  min-width: 44px;
-  padding: 0.35rem 0.25rem;
-  border-radius: 0.75rem;
-  text-decoration: none;
-  color: var(--color-muted);
-  font-size: 0.95rem;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: var(--text-caption);
   font-weight: 600;
+  color: var(--color-muted);
 }
 
-.bottom-nav__link.is-active {
-  color: var(--color-brand-strong);
-  background: var(--color-bg-accent);
+fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  margin: 0;
 }
 
-@media (max-width: 320px) {
-  body {
-    overflow-x: hidden;
+legend {
+  padding: 0 0.35rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
-
-  .bottom-nav__link {
-    font-size: 0.85rem;
-  }
 }
+
+@import "./components.css";

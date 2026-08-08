@@ -42,48 +42,56 @@ export function App() {
     void loadSession();
   }, []);
 
+  if (error) {
+    return (
+      <div className="loading-screen">
+        <p className="alert-inline" role="alert" aria-label={error}>
+          {error}
+        </p>
+        <button type="button" onClick={() => void loadSession(inviteCode)}>
+          重试
+        </button>
+      </div>
+    );
+  }
+
+  if (session === undefined) {
+    return (
+      <div className="loading-screen">
+        <div className="skeleton" style={{ height: "1rem", marginBottom: "0.5rem" }} />
+        <div className="skeleton" style={{ height: "4rem" }} />
+      </div>
+    );
+  }
+
+  if (session === null) {
+    return <OnboardingPage onAuthenticated={loadSession} />;
+  }
+
   return (
-    <main>
-      <h1>家庭点菜</h1>
-      {error ? (
-        <section>
-          <p role="alert" aria-label={error}>
-            {error}
-          </p>
-          <button type="button" onClick={() => void loadSession(inviteCode)}>
-            重试
-          </button>
-        </section>
-      ) : session === undefined ? (
-        <p>正在加载…</p>
-      ) : session === null ? (
-        <OnboardingPage onAuthenticated={loadSession} />
-      ) : (
-        <Routes>
-          <Route element={<AppShell />}>
-            <Route index element={<TodayPage session={session} />} />
-            <Route
-              path="dishes"
-              element={<DishListPage members={session.members} />}
+    <Routes>
+      <Route element={<AppShell />}>
+        <Route index element={<TodayPage session={session} />} />
+        <Route
+          path="dishes"
+          element={<DishListPage members={session.members} />}
+        />
+        <Route
+          path="choose"
+          element={<ChooseForMePage session={session} />}
+        />
+        <Route
+          path="family"
+          element={
+            <FamilyPage
+              session={session}
+              initialInviteCode={inviteCode}
+              onLoggedOut={() => setSession(null)}
             />
-            <Route
-              path="choose"
-              element={<ChooseForMePage session={session} />}
-            />
-            <Route
-              path="family"
-              element={
-                <FamilyPage
-                  session={session}
-                  initialInviteCode={inviteCode}
-                  onLoggedOut={() => setSession(null)}
-                />
-              }
-            />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      )}
-    </main>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
   );
 }

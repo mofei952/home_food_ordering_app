@@ -2,12 +2,15 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, expect, it, vi } from "vitest";
 
+import { ToastProvider } from "../ui/Toast";
 import { App } from "./App";
 
 function renderApp() {
   return render(
     <MemoryRouter>
-      <App />
+      <ToastProvider>
+        <App />
+      </ToastProvider>
     </MemoryRouter>,
   );
 }
@@ -16,9 +19,15 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it("renders the product name", () => {
+it("renders the product name", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(new Response(null, { status: 401 })),
+  );
   renderApp();
-  expect(screen.getByRole("heading", { name: "家庭点菜" })).toBeVisible();
+  expect(
+    await screen.findByRole("heading", { name: "家庭点菜" }),
+  ).toBeVisible();
 });
 
 it("shows a Chinese service error and retry for session network failures", async () => {

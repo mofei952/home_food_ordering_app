@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 
 import { ApiError } from "../../api/client";
 import type { components } from "../../api/generated";
+import { useToast } from "../../ui/Toast";
+import { IconChevronLeft, IconChevronRight } from "../../ui/icons";
+import { SegmentedControl } from "../../ui/SegmentedControl";
 import { listDishes, type DishRead } from "../dishes/api";
 import { recordMealOpened } from "../history/api";
 import {
@@ -25,7 +28,18 @@ interface TodayPageProps {
   session: SessionResponse;
 }
 
+function formatDateHeading(localDate: string): { primary: string; secondary: string } {
+  const date = new Date(`${localDate}T12:00:00`);
+  const primary = date.toLocaleDateString("zh-CN", {
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  });
+  return { primary, secondary: localDate };
+}
+
 export function TodayPage({ session }: TodayPageProps) {
+  const { push: toast } = useToast();
   const [localDate, setLocalDate] = useState(() =>
     todayInTimezone(session.household.timezone),
   );
@@ -61,12 +75,19 @@ export function TodayPage({ session }: TodayPageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reload on date/meal changes only
   }, [localDate, mealType]);
 
+  useEffect(() => {
+    const shell = document.querySelector(".app-shell");
+    shell?.classList.add("app-shell--has-confirm-bar");
+    return () => shell?.classList.remove("app-shell--has-confirm-bar");
+  }, []);
+
   async function handleRequest(dishId: string) {
     if (!slot) return;
     setError(undefined);
     try {
       const updated = await putMealRequest(slot.id, dishId);
       setSlot(updated);
+      toast("已加入想吃清单");
       void recordMealOpened(slot.id, "direct").catch(() => {
         /* non-blocking analytics */
       });
@@ -81,6 +102,7 @@ export function TodayPage({ session }: TodayPageProps) {
     try {
       await deleteMealRequest(slot.id, dishId);
       await load();
+      toast("已撤回");
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : "撤回失败");
     }
@@ -96,90 +118,131 @@ export function TodayPage({ session }: TodayPageProps) {
         expected_version: slot.version,
       });
       setSlot(updated);
+      toast(confirmed ? "菜单已更新" : "菜单已确认");
     } catch (caught) {
       if (caught instanceof ApiError && caught.code === "version_conflict") {
         setConflictMessage("菜单已被其他成员更新");
+        toast("菜单已被其他成员更新", "error");
         await load();
         return;
       }
       setError(caught instanceof ApiError ? caught.message : "确认菜单失败");
+      toast(
+        caught instanceof ApiError ? caught.message : "确认菜单失败",
+        "error",
+      );
     }
   }
 
   const dishOptions = dishes.map((dish) => ({ id: dish.id, name: dish.name }));
+  const dateHeading = formatDateHeading(localDate);
+  const confirmed = slot?.status === "confirmed";
 
   return (
-    <section>
-      <h2>今天吃什么？</h2>
-      <div>
-        <button
-          type="button"
-          aria-label="前一天"
-          onClick={() => setLocalDate((current) => shiftLocalDate(current, -1))}
-        >
-          前一天
-        </button>
-        <time dateTime={localDate}>{localDate}</time>
-        <button
-          type="button"
-          aria-label="后一天"
-          onClick={() => setLocalDate((current) => shiftLocalDate(current, 1))}
-        >
-          后一天
-        </button>
-      </div>
-      <div role="group" aria-label="餐次">
-        {(Object.keys(MEAL_TYPE_LABELS) as MealType[]).map((type) => (
+    <div className="page">
+      <div className="sticky-toolbar">
+        <div className="date-nav">
           <button
-            key={type}
             type="button"
-            aria-pressed={mealType === type}
-            onClick={() => setMealType(type)}
+            className="btn--ghost btn--icon"
+            aria-label="前一天"
+            onClick={() => setLocalDate((current) => shiftLocalDate(current, -1))}
           >
-            {MEAL_TYPE_LABELS[type]}
+            <IconChevronLeft />
           </button>
-        ))}
+          <div>
+            <p className="date-nav__label">{dateHeading.primary}</p>
+            <time dateTime={localDate}>{dateHeading.secondary}</time>
+          </div>
+          <button
+            type="button"
+            className="btn--ghost btn--icon"
+            aria-label="后一天"
+            onClick={() => setLocalDate((current) => shiftLocalDate(current, 1))}
+          >
+            <IconChevronRight />
+          </button>
+        </div>
+        <SegmentedControl
+          aria-label="餐次"
+          value={mealType}
+          onChange={setMealType}
+          options={(Object.keys(MEAL_TYPE_LABELS) as MealType[]).map((type) => ({
+            value: type,
+            label: MEAL_TYPE_LABELS[type],
+          }))}
+        />
       </div>
 
       {conflictMessage ? (
-        <p role="alert" aria-label={conflictMessage}>
+        <p className="alert-inline" role="alert" aria-label={conflictMessage}>
           {conflictMessage}
         </p>
       ) : null}
-      {error ? <p role="alert">{error}</p> : null}
+      {error ? (
+        <p className="alert-inline" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       {loading || !slot ? (
-        <p>正在加载…</p>
+        <div className="skeleton" style={{ height: "8rem" }} aria-busy="true" />
       ) : (
         <>
-          <p aria-label="餐次状态">
-            状态：{MEAL_STATUS_LABELS[slot.status]}
-          </p>
-          {slot.last_modified_by ? (
-            <p>
-              最后修改：{slot.last_modified_by.nickname}
-              {slot.last_modified_at
-                ? ` · ${new Date(slot.last_modified_at).toLocaleString("zh-CN")}`
-                : ""}
-            </p>
-          ) : null}
+          <div
+            className={
+              confirmed
+                ? "card card--status-confirmed"
+                : "card card--status-draft"
+            }
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "0.5rem",
+              }}
+            >
+              <span
+                className={confirmed ? "badge badge--confirmed" : "badge badge--draft"}
+                aria-label="餐次状态"
+              >
+                {MEAL_STATUS_LABELS[slot.status]}
+              </span>
+              {slot.last_modified_by ? (
+                <p className="page__lead" style={{ margin: 0, textAlign: "right" }}>
+                  {slot.last_modified_by.nickname}
+                  {slot.last_modified_at
+                    ? ` · ${new Date(slot.last_modified_at).toLocaleString("zh-CN", {
+                        month: "numeric",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}`
+                    : ""}
+                </p>
+              ) : null}
+            </div>
+          </div>
 
           <MealRequests
             requests={slot.requests}
             currentMemberId={session.member.id}
+            dishes={dishes}
             onRequest={(dishId) => void handleRequest(dishId)}
             onWithdraw={(dishId) => void handleWithdraw(dishId)}
-            dishOptions={dishOptions}
           />
 
           <MenuEditor
             menu={slot.menu}
             version={slot.version}
             dishOptions={dishOptions}
+            confirmed={confirmed}
             onConfirm={handleConfirm}
           />
         </>
       )}
-    </section>
+    </div>
   );
 }

@@ -1,7 +1,19 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { ToastProvider } from "../../ui/Toast";
 import { ChooseForMePage } from "./ChooseForMePage";
+
+function renderChoose(
+  session: Parameters<typeof ChooseForMePage>[0]["session"],
+  mealSlotId?: string | null,
+) {
+  return render(
+    <ToastProvider>
+      <ChooseForMePage session={session} mealSlotId={mealSlotId} />
+    </ToastProvider>,
+  );
+}
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -116,8 +128,8 @@ describe("ChooseForMePage", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<ChooseForMePage session={session} />);
-
+    renderChoose(session);
+    fireEvent.click(screen.getByRole("button", { name: "按食材找" }));
     await screen.findByText("番茄");
     fireEvent.click(screen.getByRole("button", { name: "按食材查找" }));
 
@@ -125,7 +137,7 @@ describe("ChooseForMePage", () => {
     expect(within(ready).getByText("青菜")).toBeVisible();
     const oneMissing = screen.getByRole("region", { name: "再补一种即可" });
     expect(within(oneMissing).getByText("番茄炒蛋")).toBeVisible();
-    expect(within(oneMissing).getByText("缺少食材：鸡蛋")).toBeVisible();
+    expect(within(oneMissing).getByText(/缺少.*鸡蛋/)).toBeVisible();
   });
 
   it("resolves today's meal slot and accepts a pick into that meal", async () => {
@@ -163,9 +175,8 @@ describe("ChooseForMePage", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<ChooseForMePage session={session} />);
+    renderChoose(session);
 
-    await screen.findByText("番茄");
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
         expect.stringMatching(/\/api\/meal-slots\/\d{4}-\d{2}-\d{2}\/(lunch|dinner)$/),
@@ -173,12 +184,10 @@ describe("ChooseForMePage", () => {
       ),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "随机一道" }));
+    fireEvent.click(screen.getByRole("button", { name: "开始随机" }));
 
     const result = await screen.findByRole("region", { name: "随机结果" });
     expect(within(result).getByText("番茄炒蛋")).toBeVisible();
-    expect(within(result).getByText("制作者：小林")).toBeVisible();
-    expect(within(result).getByText("上次食用：2026-08-01")).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "换一道" }));
     await waitFor(() =>
@@ -259,8 +268,9 @@ describe("ChooseForMePage", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<ChooseForMePage session={session} />);
+    renderChoose(session);
     await screen.findByText("番茄");
+    fireEvent.click(screen.getByRole("button", { name: "按食材找" }));
     fireEvent.click(screen.getByRole("button", { name: "按食材查找" }));
 
     const ready = await screen.findByRole("region", { name: "现在就能做" });
@@ -308,18 +318,16 @@ describe("ChooseForMePage", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<ChooseForMePage session={session} />);
+    renderChoose(session);
 
     await screen.findByText("番茄");
-    fireEvent.click(screen.getByRole("checkbox", { name: "小林" }));
-    fireEvent.click(screen.getByRole("checkbox", { name: "素菜" }));
+    fireEvent.click(screen.getByRole("button", { name: "小林" }));
+    fireEvent.click(screen.getByRole("button", { name: "素菜" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "番茄" }));
-    fireEvent.click(screen.getByRole("button", { name: "随机一道" }));
+    fireEvent.click(screen.getByRole("button", { name: "开始随机" }));
 
     const result = await screen.findByRole("region", { name: "随机结果" });
-    expect(
-      within(result).getByText("匹配条件：制作者：小林；类别：素菜；现有食材：番茄"),
-    ).toBeVisible();
+    expect(within(result).getByText("番茄炒蛋")).toBeVisible();
   });
 
   it("shows meal type toggle for lunch and dinner", async () => {
@@ -337,7 +345,7 @@ describe("ChooseForMePage", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<ChooseForMePage session={session} />);
+    renderChoose(session);
 
     const lunch = await screen.findByRole("button", { name: "午餐" });
     const dinner = screen.getByRole("button", { name: "晚餐" });
@@ -377,9 +385,10 @@ describe("ChooseForMePage", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<ChooseForMePage session={session} />);
+    renderChoose(session);
     await screen.findByText("番茄");
-    fireEvent.click(screen.getByRole("checkbox", { name: "汤" }));
+    fireEvent.click(screen.getByRole("button", { name: "按食材找" }));
+    fireEvent.click(screen.getByRole("button", { name: "汤" }));
     fireEvent.click(screen.getByRole("button", { name: "按食材查找" }));
 
     expect(

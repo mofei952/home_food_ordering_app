@@ -105,8 +105,12 @@ export function DishForm({
   }
 
   return (
-    <form aria-label="菜品表单" onSubmit={handleSubmit}>
-      {error && <p role="alert">{error}</p>}
+    <form aria-label="菜品表单" className="form-stack" onSubmit={handleSubmit}>
+      {error && (
+        <p className="alert-inline" role="alert">
+          {error}
+        </p>
+      )}
       <label>
         菜名
         <input
@@ -169,11 +173,11 @@ export function DishForm({
           setPreviewUrl(next.previewUrl);
         }}
       />
-      <div>
+      <div className="form-actions">
         <button type="submit" disabled={submitting}>
           {submitLabel}
         </button>
-        <button type="button" onClick={onCancel} disabled={submitting}>
+        <button type="button" className="btn--ghost" onClick={onCancel} disabled={submitting}>
           取消
         </button>
       </div>

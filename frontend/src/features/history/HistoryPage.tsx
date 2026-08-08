@@ -69,10 +69,10 @@ export function HistoryPage({
 
       {!loading && history.length === 0 ? <p>这段时间还没有已确认的菜单。</p> : null}
 
-      <ol>
+      <ol className="timeline">
         {history.map((entry) => (
-          <li key={entry.meal_slot_id}>
-            <article>
+          <li key={entry.meal_slot_id} className="timeline__item">
+            <article className="card">
               <h3>
                 <time dateTime={entry.local_date}>{entry.local_date}</time>
                 {" · "}

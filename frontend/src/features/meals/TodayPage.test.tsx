@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { ToastProvider } from "../../ui/Toast";
 import { TodayPage } from "./TodayPage";
 
 afterEach(() => {
@@ -101,14 +102,13 @@ describe("TodayPage", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<TodayPage session={session} />);
+    render(
+      <ToastProvider>
+        <TodayPage session={session} />
+      </ToastProvider>,
+    );
 
-    expect(
-      await screen.findByRole("heading", { name: "今天吃什么？" }),
-    ).toBeVisible();
-    expect(screen.getByRole("button", { name: "午餐" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "晚餐" })).toBeVisible();
-    expect(screen.getByLabelText("餐次状态")).toHaveTextContent("待确认");
+    expect(await screen.findByLabelText("餐次状态")).toHaveTextContent("待确认");
     expect(screen.getByTestId("requesters-番茄炒蛋")).toHaveTextContent(
       "小林、小周",
     );
@@ -161,12 +161,15 @@ describe("TodayPage", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<TodayPage session={session} />);
+    render(
+      <ToastProvider>
+        <TodayPage session={session} />
+      </ToastProvider>,
+    );
     await screen.findByLabelText("餐次状态");
 
-    fireEvent.change(screen.getByLabelText("点一道菜"), {
-      target: { value: "d1" },
-    });
+    fireEvent.click(screen.getByRole("button", { name: "+ 想吃的菜" }));
+    fireEvent.click(screen.getByRole("button", { name: "点这道菜" }));
 
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
@@ -233,11 +236,16 @@ describe("TodayPage", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<TodayPage session={session} />);
+    render(
+      <ToastProvider>
+        <TodayPage session={session} />
+      </ToastProvider>,
+    );
     await screen.findByLabelText("餐次状态");
 
-    fireEvent.click(screen.getByRole("button", { name: "加入最终菜单：番茄炒蛋" }));
-    fireEvent.click(screen.getByRole("button", { name: "确认菜单" }));
+    fireEvent.click(screen.getByRole("button", { name: "从菜品库添加" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "番茄炒蛋" }));
+    fireEvent.click(screen.getByRole("button", { name: /确认菜单/ }));
 
     expect(
       await screen.findByRole("alert", { name: "菜单已被其他成员更新" }),

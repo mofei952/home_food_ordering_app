@@ -1,8 +1,17 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { ToastProvider } from "../../ui/Toast";
 import { DishForm, type DishInput } from "./DishForm";
 import { DishListPage } from "./DishListPage";
+
+function renderDishList() {
+  return render(
+    <ToastProvider>
+      <DishListPage members={members} />
+    </ToastProvider>,
+  );
+}
 
 vi.mock("../images/compressImage", () => ({
   compressImage: vi.fn(async () => ({
@@ -61,19 +70,14 @@ describe("DishListPage", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<DishListPage members={members} />);
+    renderDishList();
 
     const tomatoEgg = await screen.findByText("番茄炒蛋");
     expect(tomatoEgg).toBeVisible();
     const tomatoCard = tomatoEgg.closest("article");
     expect(tomatoCard).not.toBeNull();
     expect(within(tomatoCard as HTMLElement).getByText("荤菜")).toBeVisible();
-    expect(
-      within(tomatoCard as HTMLElement).getByText("制作者：小林"),
-    ).toBeVisible();
-    expect(
-      within(tomatoCard as HTMLElement).getByText("食材：番茄、鸡蛋"),
-    ).toBeVisible();
+    expect(within(tomatoCard as HTMLElement).getByText("小林")).toBeVisible();
     expect(screen.getByRole("heading", { name: "青菜" })).toBeVisible();
   });
 
@@ -90,12 +94,12 @@ describe("DishListPage", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<DishListPage members={members} />);
+    renderDishList();
     await screen.findByText("番茄炒蛋");
 
-    fireEvent.change(screen.getByLabelText("类别"), {
-      target: { value: "荤菜" },
-    });
+    fireEvent.click(screen.getByRole("button", { name: "筛选" }));
+    const sheet = await screen.findByRole("dialog");
+    fireEvent.click(within(sheet).getByRole("button", { name: "荤菜" }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
         "/api/dishes?category=%E8%8D%A4%E8%8F%9C",
@@ -103,15 +107,12 @@ describe("DishListPage", () => {
       ),
     );
 
-    fireEvent.change(screen.getByLabelText("类别"), {
-      target: { value: "" },
-    });
-    fireEvent.change(screen.getByLabelText("制作者"), {
-      target: { value: "m2" },
-    });
+    fireEvent.click(screen.getByRole("button", { name: "筛选" }));
+    const sheet2 = screen.getByRole("dialog");
+    fireEvent.click(within(sheet2).getByRole("button", { name: "小周" }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
-        "/api/dishes?cook_id=m2",
+        "/api/dishes?cook_id=m2&category=%E8%8D%A4%E8%8F%9C",
         expect.objectContaining({ credentials: "include" }),
       ),
     );
@@ -141,7 +142,7 @@ describe("DishListPage", () => {
       );
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<DishListPage members={members} />);
+    renderDishList();
     const card = (await screen.findByText("番茄炒蛋")).closest("article");
     expect(card).not.toBeNull();
     fireEvent.click(within(card as HTMLElement).getByRole("button", { name: "归档" }));

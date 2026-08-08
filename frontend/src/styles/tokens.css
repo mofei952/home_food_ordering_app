@@ -1,0 +1,37 @@
+:root {
+  color-scheme: light;
+  --color-bg: #fffbf7;
+  --color-bg-accent: #ffedd5;
+  --color-ink: #292524;
+  --color-muted: #78716c;
+  --color-brand: #c2410c;
+  --color-brand-strong: #9a3412;
+  --color-brand-soft: #ffedd5;
+  --color-surface: #ffffff;
+  --color-surface-raised: rgba(255, 255, 255, 0.92);
+  --color-border: #e7e5e4;
+  --color-border-strong: #fdba74;
+  --color-focus: #0f766e;
+  --color-success: #047857;
+  --color-success-soft: #d1fae5;
+  --color-warning: #b45309;
+  --color-warning-soft: #fef3c7;
+  --color-danger-bg: #fff1f2;
+  --color-danger-ink: #9f1239;
+  --shadow-sm: 0 1px 3px rgba(28, 25, 23, 0.08);
+  --shadow-md: 0 4px 14px rgba(28, 25, 23, 0.1);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --nav-height: 64px;
+  --header-height: 52px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --font-sans:
+    "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", sans-serif;
+  --text-display: clamp(1.35rem, 4.5vw, 1.5rem);
+  --text-title: 1.0625rem;
+  --text-body: 0.9375rem;
+  --text-caption: 0.8125rem;
+}
