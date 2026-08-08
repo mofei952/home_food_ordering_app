@@ -44,7 +44,7 @@ export function App() {
 
   if (error) {
     return (
-      <div className="loading-screen">
+      <div className="auth-viewport loading-screen">
         <p className="alert-inline" role="alert" aria-label={error}>
           {error}
         </p>
@@ -57,7 +57,7 @@ export function App() {
 
   if (session === undefined) {
     return (
-      <div className="loading-screen">
+      <div className="auth-viewport loading-screen">
         <div className="skeleton" style={{ height: "1rem", marginBottom: "0.5rem" }} />
         <div className="skeleton" style={{ height: "4rem" }} />
       </div>
@@ -65,7 +65,11 @@ export function App() {
   }
 
   if (session === null) {
-    return <OnboardingPage onAuthenticated={loadSession} />;
+    return (
+      <div className="auth-viewport">
+        <OnboardingPage onAuthenticated={loadSession} />
+      </div>
+    );
   }
 
   return (

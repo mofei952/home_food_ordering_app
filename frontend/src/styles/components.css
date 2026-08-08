@@ -1,21 +1,32 @@
+.app-viewport {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  background: inherit;
+}
+
 .app-shell {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  height: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  overflow: hidden;
 }
 
 .app-shell__content {
   flex: 1;
-  width: min(100%, 40rem);
-  margin: 0 auto;
-  padding: 0 1rem
-    calc(var(--nav-height) + var(--safe-bottom) + 1rem);
+  min-height: 0;
+  width: 100%;
+  padding: 0 1rem 1rem;
   overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .app-header {
-  position: sticky;
-  top: 0;
+  position: relative;
+  flex-shrink: 0;
   z-index: 15;
   display: flex;
   align-items: center;
@@ -43,8 +54,7 @@
 }
 
 .network-banner {
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
   z-index: 25;
   margin: 0;
   padding: 0.5rem 1rem;
@@ -56,19 +66,17 @@
 }
 
 .bottom-nav {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  flex-shrink: 0;
+  position: relative;
   z-index: 30;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.25rem;
   min-height: calc(var(--nav-height) + var(--safe-bottom));
-  padding: 0.35rem 0.5rem calc(0.35rem + var(--safe-bottom));
+  padding: 0.35rem 0.75rem calc(0.35rem + var(--safe-bottom));
   background: var(--color-surface-raised);
   border-top: 1px solid var(--color-border);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 -4px 16px rgba(28, 25, 23, 0.06);
 }
 
 .bottom-nav__link {
@@ -84,6 +92,8 @@
   color: var(--color-muted);
   font-size: 0.7rem;
   font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .bottom-nav__link svg {
@@ -197,14 +207,14 @@
 
 .sticky-toolbar {
   position: sticky;
-  top: var(--header-height);
+  top: 0;
   z-index: 10;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  margin: 0 -1rem;
-  padding: 0.75rem 1rem;
-  background: rgba(255, 251, 247, 0.92);
+  margin: 0 -1rem 0.5rem;
+  padding: 0.5rem 1rem 0.75rem;
+  background: rgba(255, 251, 247, 0.96);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--color-border);
 }
@@ -404,36 +414,72 @@
 }
 
 .today-confirm-bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(var(--nav-height) + var(--safe-bottom));
-  z-index: 28;
-  padding: 0.65rem 1rem;
-  background: var(--color-surface-raised);
+  position: sticky;
+  bottom: 0;
+  z-index: 12;
+  margin: 0.75rem -1rem 0;
+  padding: 0.65rem 1rem calc(0.65rem + var(--safe-bottom));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 251, 247, 0) 0%,
+    rgba(255, 251, 247, 0.92) 24%,
+    rgba(255, 251, 247, 1) 100%
+  );
   border-top: 1px solid var(--color-border);
-  backdrop-filter: blur(10px);
 }
 
-.today-confirm-bar .app-shell__content,
 .today-confirm-bar__inner {
-  width: min(100%, 40rem);
-  margin: 0 auto;
+  width: 100%;
 }
 
 .today-confirm-bar button {
   width: 100%;
 }
 
-.app-shell--has-confirm-bar .app-shell__content {
-  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 4.5rem);
+.page-section-tabs {
+  margin-bottom: 0.25rem;
+}
+
+.auth-viewport {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.auth-viewport .page {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding-bottom: calc(1.5rem + var(--safe-bottom));
+}
+
+.filters-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.filters-panel__toggle {
+  width: 100%;
+}
+
+.filters-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fab-row {
+  display: flex;
+  justify-content: flex-end;
+  position: sticky;
+  bottom: 0.5rem;
+  margin-top: 0.5rem;
+  pointer-events: none;
 }
 
 .fab {
-  position: fixed;
-  right: 1rem;
-  bottom: calc(var(--nav-height) + var(--safe-bottom) + 0.75rem);
-  z-index: 27;
+  pointer-events: auto;
   width: 56px;
   height: 56px;
   min-width: 56px;

@@ -269,8 +269,8 @@ describe("ChooseForMePage", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     renderChoose(session);
-    await screen.findByText("番茄");
     fireEvent.click(screen.getByRole("button", { name: "按食材找" }));
+    await screen.findByText("番茄");
     fireEvent.click(screen.getByRole("button", { name: "按食材查找" }));
 
     const ready = await screen.findByRole("region", { name: "现在就能做" });
@@ -320,6 +320,7 @@ describe("ChooseForMePage", () => {
 
     renderChoose(session);
 
+    fireEvent.click(screen.getByRole("button", { name: /展开筛选条件/ }));
     await screen.findByText("番茄");
     fireEvent.click(screen.getByRole("button", { name: "小林" }));
     fireEvent.click(screen.getByRole("button", { name: "素菜" }));
@@ -347,6 +348,7 @@ describe("ChooseForMePage", () => {
 
     renderChoose(session);
 
+    fireEvent.click(screen.getByRole("button", { name: /展开筛选条件/ }));
     const lunch = await screen.findByRole("button", { name: "午餐" });
     const dinner = screen.getByRole("button", { name: "晚餐" });
     expect(lunch).toBeVisible();
@@ -386,8 +388,8 @@ describe("ChooseForMePage", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     renderChoose(session);
-    await screen.findByText("番茄");
     fireEvent.click(screen.getByRole("button", { name: "按食材找" }));
+    await screen.findByText("番茄");
     fireEvent.click(screen.getByRole("button", { name: "汤" }));
     fireEvent.click(screen.getByRole("button", { name: "按食材查找" }));
 

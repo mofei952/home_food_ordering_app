@@ -76,7 +76,7 @@ export function OnboardingPage({ onAuthenticated }: OnboardingPageProps) {
   }
 
   return (
-    <div className="page" style={{ maxWidth: "40rem", margin: "0 auto", padding: "1rem" }}>
+    <div className="page" style={{ maxWidth: "40rem", margin: "0 auto" }}>
       <div className="onboarding-hero">
         <h1>家庭点菜</h1>
         <p>少争论，快点菜 — 记录你家会做的菜，一起决定今天吃什么</p>

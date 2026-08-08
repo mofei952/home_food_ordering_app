@@ -196,14 +196,16 @@ export function DishListPage({ members }: DishListPageProps) {
         </div>
       )}
 
-      <button
-        type="button"
-        className="fab"
-        aria-label="新增菜品"
-        onClick={openCreate}
-      >
-        <IconPlus />
-      </button>
+      <div className="fab-row">
+        <button
+          type="button"
+          className="fab"
+          aria-label="新增菜品"
+          onClick={openCreate}
+        >
+          <IconPlus />
+        </button>
+      </div>
 
       <BottomSheet
         open={filterOpen}

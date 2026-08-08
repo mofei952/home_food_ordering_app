@@ -121,6 +121,11 @@ export function ChooseForMePage({
   const [error, setError] = useState<string>();
   const [relaxable, setRelaxable] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  useEffect(() => {
+    setFiltersOpen(tab === "ingredient");
+  }, [tab]);
 
   useEffect(() => {
     if (mealSlotId) {
@@ -288,6 +293,22 @@ export function ChooseForMePage({
     </>
   );
 
+  const filtersPanel = (
+    <div className="card filters-panel">
+      <button
+        type="button"
+        className="btn--ghost filters-panel__toggle"
+        aria-expanded={filtersOpen}
+        onClick={() => setFiltersOpen((open) => !open)}
+      >
+        {filtersOpen ? "收起筛选条件" : "展开筛选条件（餐次、制作者、类别）"}
+      </button>
+      {filtersOpen ? (
+        <div className="filters-panel__body">{filterSection}</div>
+      ) : null}
+    </div>
+  );
+
   return (
     <div className="page" aria-label="帮我选">
       <SegmentedControl
@@ -314,21 +335,23 @@ export function ChooseForMePage({
 
       {tab === "random" ? (
         <div className="choose-panel">
-          {filterSection}
-          <IngredientPicker
-            selectedIds={availableIngredientIds}
-            onChange={setAvailableIngredientIds}
-            onToggleIngredient={(ingredient, selected) => {
-              setIngredientNames((current) => {
-                if (selected) {
-                  return { ...current, [ingredient.id]: ingredient.name };
-                }
-                const next = { ...current };
-                delete next[ingredient.id];
-                return next;
-              });
-            }}
-          />
+          {filtersPanel}
+          {filtersOpen ? (
+            <IngredientPicker
+              selectedIds={availableIngredientIds}
+              onChange={setAvailableIngredientIds}
+              onToggleIngredient={(ingredient, selected) => {
+                setIngredientNames((current) => {
+                  if (selected) {
+                    return { ...current, [ingredient.id]: ingredient.name };
+                  }
+                  const next = { ...current };
+                  delete next[ingredient.id];
+                  return next;
+                });
+              }}
+            />
+          ) : null}
           <div className="random-stage">
             {picked ? (
               <div className="random-stage__card" style={{ width: "100%" }}>
@@ -377,7 +400,7 @@ export function ChooseForMePage({
         </div>
       ) : (
         <div className="choose-panel">
-          {filterSection}
+          {filtersPanel}
           <IngredientPicker
             selectedIds={availableIngredientIds}
             onChange={setAvailableIngredientIds}

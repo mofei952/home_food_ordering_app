@@ -36,13 +36,11 @@ function syncWriteControls(root: HTMLElement, online: boolean) {
 interface AppShellProps {
   children?: ReactNode;
   headerActions?: ReactNode;
-  confirmBar?: boolean;
 }
 
 export function AppShell({
   children,
   headerActions,
-  confirmBar,
 }: AppShellProps) {
   const online = useOnlineStatus();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -68,18 +66,15 @@ export function AppShell({
   }, [online]);
 
   return (
-    <div
-      className={
-        confirmBar ? "app-shell app-shell--has-confirm-bar" : "app-shell"
-      }
-      data-online={online ? "true" : "false"}
-    >
-      <NetworkBanner online={online} />
-      <AppHeader actions={headerActions} />
-      <div className="app-shell__content" ref={contentRef}>
-        {children ?? <Outlet />}
+    <div className="app-viewport">
+      <div className="app-shell" data-online={online ? "true" : "false"}>
+        <NetworkBanner online={online} />
+        <AppHeader actions={headerActions} />
+        <div className="app-shell__content" ref={contentRef}>
+          {children ?? <Outlet />}
+        </div>
+        <BottomNav />
       </div>
-      <BottomNav />
     </div>
   );
 }

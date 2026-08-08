@@ -49,6 +49,7 @@ export function TodayPage({ session }: TodayPageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
   const [conflictMessage, setConflictMessage] = useState<string>();
+  const [section, setSection] = useState<"order" | "menu">("order");
 
   async function load(date = localDate, type = mealType) {
     setLoading(true);
@@ -74,12 +75,6 @@ export function TodayPage({ session }: TodayPageProps) {
     void load(localDate, mealType);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reload on date/meal changes only
   }, [localDate, mealType]);
-
-  useEffect(() => {
-    const shell = document.querySelector(".app-shell");
-    shell?.classList.add("app-shell--has-confirm-bar");
-    return () => shell?.classList.remove("app-shell--has-confirm-bar");
-  }, []);
 
   async function handleRequest(dishId: string) {
     if (!slot) return;
@@ -226,21 +221,35 @@ export function TodayPage({ session }: TodayPageProps) {
             </div>
           </div>
 
-          <MealRequests
-            requests={slot.requests}
-            currentMemberId={session.member.id}
-            dishes={dishes}
-            onRequest={(dishId) => void handleRequest(dishId)}
-            onWithdraw={(dishId) => void handleWithdraw(dishId)}
-          />
+          <div className="page-section-tabs">
+            <SegmentedControl
+              aria-label="今天的工作区"
+              value={section}
+              onChange={setSection}
+              options={[
+                { value: "order", label: "点菜" },
+                { value: "menu", label: "确认菜单" },
+              ]}
+            />
+          </div>
 
-          <MenuEditor
-            menu={slot.menu}
-            version={slot.version}
-            dishOptions={dishOptions}
-            confirmed={confirmed}
-            onConfirm={handleConfirm}
-          />
+          {section === "order" ? (
+            <MealRequests
+              requests={slot.requests}
+              currentMemberId={session.member.id}
+              dishes={dishes}
+              onRequest={(dishId) => void handleRequest(dishId)}
+              onWithdraw={(dishId) => void handleWithdraw(dishId)}
+            />
+          ) : (
+            <MenuEditor
+              menu={slot.menu}
+              version={slot.version}
+              dishOptions={dishOptions}
+              confirmed={confirmed}
+              onConfirm={handleConfirm}
+            />
+          )}
         </>
       )}
     </div>
