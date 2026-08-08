@@ -27,13 +27,15 @@ from app.dishes.schemas import (
 from app.errors import ApiError
 from app.households.models import Member
 from app.households.service import AuthContext
+from app.images.service import signed_image_url
+from app.images.storage import Storage
 
 
 def normalize_ingredient_name(value: str) -> str:
     return unicodedata.normalize("NFKC", value).strip().casefold()
 
 
-def dish_to_read(dish: Dish) -> DishRead:
+def dish_to_read(dish: Dish, storage: Storage | None = None) -> DishRead:
     cooks = [
         CookSummary.model_validate(link.member)
         for link in sorted(dish.cooks, key=lambda item: item.member.nickname)
@@ -44,17 +46,29 @@ def dish_to_read(dish: Dish) -> DishRead:
             dish.ingredients, key=lambda item: item.ingredient.name
         )
     ]
+    image_url = (
+        signed_image_url(storage, dish.image_key) if storage is not None else None
+    )
     return DishRead(
         id=dish.id,
         name=dish.name,
         category=dish.category,
         cooks=cooks,
         ingredients=ingredients,
-        image_url=None,
+        image_key=dish.image_key,
+        image_url=image_url,
         archived_at=dish.archived_at,
         updated_by=UpdatedBySummary.model_validate(dish.updated_by),
         updated_at=dish.updated_at,
     )
+
+
+def validate_image_key(auth: AuthContext, image_key: str | None) -> None:
+    if image_key is None:
+        return
+    prefix = f"{auth.household.id}/"
+    if not image_key.startswith(prefix) or image_key == prefix:
+        raise ApiError(400, "图片无效", "invalid_image_key")
 
 
 def ingredient_to_read(ingredient: Ingredient) -> IngredientRead:
@@ -265,6 +279,7 @@ async def apply_dish_relations(
 async def create_dish(
     db: AsyncSession, auth: AuthContext, payload: DishCreate
 ) -> Dish:
+    validate_image_key(auth, payload.image_key)
     dish = Dish(
         household_id=auth.household.id,
         name=payload.name,
@@ -294,6 +309,7 @@ async def update_dish(
     if dish.archived_at is not None:
         raise ApiError(400, "已归档菜品不可编辑", "dish_archived")
 
+    validate_image_key(auth, payload.image_key)
     dish.name = payload.name
     dish.category = payload.category
     dish.image_key = payload.image_key

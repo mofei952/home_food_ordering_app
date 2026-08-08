@@ -127,7 +127,8 @@ export function DishListPage({ members }: DishListPageProps) {
             category: editing.category,
             cookIds: editing.cooks.map((cook) => cook.id),
             ingredients: editing.ingredients.map((item) => item.name),
-            imageKey: null,
+            imageKey: editing.image_key ?? null,
+            imageUrl: editing.image_url,
           }}
           onSubmit={handleUpdate}
           onCancel={() => setEditing(null)}

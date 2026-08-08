@@ -999,6 +999,44 @@
         }
       }
     },
+    "/api/images": {
+      "post": {
+        "summary": "Post Image",
+        "operationId": "post_image_api_images_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_post_image_api_images_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageUploadRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health",
@@ -1039,6 +1077,20 @@
           "member"
         ],
         "title": "AuthResponse"
+      },
+      "Body_post_image_api_images_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_post_image_api_images_post"
       },
       "ConfirmationDetail": {
         "properties": {
@@ -1305,6 +1357,17 @@
             "type": "array",
             "title": "Ingredients"
           },
+          "image_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Key"
+          },
           "image_url": {
             "anyOf": [
               {
@@ -1344,6 +1407,7 @@
           "category",
           "cooks",
           "ingredients",
+          "image_key",
           "image_url",
           "archived_at",
           "updated_by",
@@ -1618,6 +1682,24 @@
           "timezone"
         ],
         "title": "HouseholdSummary"
+      },
+      "ImageUploadRead": {
+        "properties": {
+          "image_key": {
+            "type": "string",
+            "title": "Image Key"
+          },
+          "image_url": {
+            "type": "string",
+            "title": "Image Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image_key",
+          "image_url"
+        ],
+        "title": "ImageUploadRead"
       },
       "IngredientCreate": {
         "properties": {

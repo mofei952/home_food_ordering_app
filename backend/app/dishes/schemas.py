@@ -81,6 +81,7 @@ class DishRead(BaseModel):
     category: DishCategory
     cooks: list[CookSummary]
     ingredients: list[IngredientSummary]
+    image_key: str | None
     image_url: str | None
     archived_at: datetime | None
     updated_by: UpdatedBySummary

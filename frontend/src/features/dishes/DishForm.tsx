@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 
 import type { components } from "../../api/generated";
+import { ImageField } from "../images/ImageField";
 
 export type DishCategory = "荤菜" | "素菜" | "主食" | "汤" | "其他";
 
@@ -18,7 +19,7 @@ const CATEGORIES: DishCategory[] = ["荤菜", "素菜", "主食", "汤", "其他
 
 interface DishFormProps {
   members: MemberSummary[];
-  initial?: Partial<DishInput>;
+  initial?: Partial<DishInput> & { imageUrl?: string | null };
   submitLabel?: string;
   onSubmit: (input: DishInput) => void | Promise<void>;
   onCancel: () => void;
@@ -46,6 +47,13 @@ export function DishForm({
   const [ingredientsText, setIngredientsText] = useState(
     (initial?.ingredients ?? []).join("，"),
   );
+  const [imageKey, setImageKey] = useState<string | null>(
+    initial?.imageKey ?? null,
+  );
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    initial?.imageUrl ?? null,
+  );
+  const [imageError, setImageError] = useState<string>();
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
 
@@ -83,7 +91,7 @@ export function DishForm({
       category,
       cookIds,
       ingredients,
-      imageKey: initial?.imageKey ?? null,
+      imageKey: imageError ? null : imageKey,
     };
 
     setSubmitting(true);
@@ -152,6 +160,16 @@ export function DishForm({
           required
         />
       </label>
+      <ImageField
+        value={imageKey}
+        previewUrl={previewUrl}
+        disabled={submitting}
+        onChange={(next) => {
+          setImageKey(next.imageKey);
+          setPreviewUrl(next.previewUrl);
+          setImageError(next.error);
+        }}
+      />
       <div>
         <button type="submit" disabled={submitting}>
           {submitLabel}

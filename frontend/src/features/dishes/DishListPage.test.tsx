@@ -4,6 +4,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { DishForm, type DishInput } from "./DishForm";
 import { DishListPage } from "./DishListPage";
 
+vi.mock("../images/compressImage", () => ({
+  compressImage: vi.fn(async () => ({
+    blob: new Blob([new Uint8Array(8)], { type: "image/webp" }),
+    width: 100,
+    height: 80,
+  })),
+}));
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -23,6 +31,7 @@ const dishes = [
       { id: "i1", name: "番茄" },
       { id: "i2", name: "鸡蛋" },
     ],
+    image_key: null,
     image_url: null,
     archived_at: null,
     updated_by: { id: "m1", nickname: "小林" },
@@ -34,6 +43,7 @@ const dishes = [
     category: "素菜" as const,
     cooks: [{ id: "m2", nickname: "小周" }],
     ingredients: [{ id: "i3", name: "青菜" }],
+    image_key: null,
     image_url: null,
     archived_at: null,
     updated_by: { id: "m2", nickname: "小周" },
@@ -181,5 +191,51 @@ describe("DishForm", () => {
       ingredients: ["番茄", "鸡蛋"],
       imageKey: null,
     });
+  });
+
+  it("keeps text fields and submits null imageKey when upload fails", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            detail: "图片上传失败",
+            code: "image_upload_failed",
+          }),
+          { status: 503, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+
+    render(
+      <DishForm members={members} onSubmit={onSubmit} onCancel={vi.fn()} />,
+    );
+
+    fireEvent.change(screen.getByLabelText("菜名"), {
+      target: { value: "番茄炒蛋" },
+    });
+    fireEvent.change(screen.getByLabelText("类别"), {
+      target: { value: "荤菜" },
+    });
+    fireEvent.click(screen.getByLabelText("小林"));
+    fireEvent.change(screen.getByLabelText("食材"), {
+      target: { value: "番茄, 鸡蛋" },
+    });
+    fireEvent.change(screen.getByLabelText("菜品图片"), {
+      target: {
+        files: [
+          new File([new Uint8Array(4)], "dish.jpg", { type: "image/jpeg" }),
+        ],
+      },
+    });
+
+    await screen.findByText("图片上传失败，你仍可先保存菜品");
+    expect(screen.getByLabelText("菜名")).toHaveValue("番茄炒蛋");
+    expect(screen.getByLabelText("食材")).toHaveValue("番茄, 鸡蛋");
+
+    fireEvent.submit(screen.getByRole("form", { name: "菜品表单" }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+    expect(onSubmit.mock.calls[0][0].imageKey).toBeNull();
   });
 });

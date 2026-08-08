@@ -316,6 +316,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Image */
+        post: operations["post_image_api_images_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -341,6 +358,11 @@ export interface components {
         AuthResponse: {
             household: components["schemas"]["HouseholdSummary"];
             member: components["schemas"]["MemberSummary"];
+        };
+        /** Body_post_image_api_images_post */
+        Body_post_image_api_images_post: {
+            /** File */
+            file: string;
         };
         /** ConfirmationDetail */
         ConfirmationDetail: {
@@ -440,6 +462,8 @@ export interface components {
             cooks: components["schemas"]["CookSummary"][];
             /** Ingredients */
             ingredients: components["schemas"]["IngredientSummary"][];
+            /** Image Key */
+            image_key: string | null;
             /** Image Url */
             image_url: string | null;
             /** Archived At */
@@ -562,6 +586,13 @@ export interface components {
             name: string;
             /** Timezone */
             timezone: string;
+        };
+        /** ImageUploadRead */
+        ImageUploadRead: {
+            /** Image Key */
+            image_key: string;
+            /** Image Url */
+            image_url: string;
         };
         /** IngredientCreate */
         IngredientCreate: {
@@ -1593,6 +1624,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MetricsSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_image_api_images_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_post_image_api_images_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageUploadRead"];
                 };
             };
             /** @description Validation Error */

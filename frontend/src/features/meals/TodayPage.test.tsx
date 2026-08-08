@@ -45,6 +45,7 @@ const dishes = [
       { id: "i1", name: "番茄" },
       { id: "i2", name: "鸡蛋" },
     ],
+    image_key: null,
     image_url: null,
     archived_at: null,
     updated_by: { id: "m1", nickname: "小林" },

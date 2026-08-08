@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
@@ -24,16 +24,25 @@ from app.dishes.service import (
     update_dish,
 )
 from app.households.service import AuthContext, require_member
+from app.images.storage import Storage
 
 router = APIRouter(prefix="/api")
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 CurrentMember = Annotated[AuthContext, Depends(require_member)]
 
 
+def get_storage(request: Request) -> Storage:
+    return request.app.state.storage
+
+
+StorageDep = Annotated[Storage, Depends(get_storage)]
+
+
 @router.get("/dishes", response_model=list[DishRead])
 async def get_dishes(
     auth: CurrentMember,
     db: DbSession,
+    storage: StorageDep,
     cook_id: UUID | None = None,
     category: str | None = None,
     include_archived: bool = Query(default=False),
@@ -45,7 +54,7 @@ async def get_dishes(
         category=category,
         include_archived=include_archived,
     )
-    return [dish_to_read(dish) for dish in dishes]
+    return [dish_to_read(dish, storage) for dish in dishes]
 
 
 @router.post(
@@ -57,9 +66,10 @@ async def post_dish(
     payload: DishCreate,
     auth: CurrentMember,
     db: DbSession,
+    storage: StorageDep,
 ) -> DishRead:
     dish = await create_dish(db, auth, payload)
-    return dish_to_read(dish)
+    return dish_to_read(dish, storage)
 
 
 @router.get("/dishes/{dish_id}", response_model=DishRead)
@@ -67,9 +77,10 @@ async def get_dish(
     dish_id: UUID,
     auth: CurrentMember,
     db: DbSession,
+    storage: StorageDep,
 ) -> DishRead:
     dish = await require_dish(db, auth.household.id, dish_id)
-    return dish_to_read(dish)
+    return dish_to_read(dish, storage)
 
 
 @router.patch("/dishes/{dish_id}", response_model=DishRead)
@@ -78,9 +89,10 @@ async def patch_dish(
     payload: DishUpdate,
     auth: CurrentMember,
     db: DbSession,
+    storage: StorageDep,
 ) -> DishRead:
     dish = await update_dish(db, auth, dish_id, payload)
-    return dish_to_read(dish)
+    return dish_to_read(dish, storage)
 
 
 @router.delete("/dishes/{dish_id}", response_model=DishRead)
@@ -88,9 +100,10 @@ async def delete_dish(
     dish_id: UUID,
     auth: CurrentMember,
     db: DbSession,
+    storage: StorageDep,
 ) -> DishRead:
     dish = await archive_dish(db, auth, dish_id)
-    return dish_to_read(dish)
+    return dish_to_read(dish, storage)
 
 
 @router.get("/ingredients", response_model=list[IngredientRead])
