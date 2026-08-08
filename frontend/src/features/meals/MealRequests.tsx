@@ -58,6 +58,7 @@ export function MealRequests({
         点一道菜
         <select
           aria-label="点一道菜"
+          data-write="true"
           defaultValue=""
           onChange={(event) => {
             const dishId = event.target.value;

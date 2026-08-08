@@ -8,20 +8,26 @@ import { Outlet } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
 import { NetworkBanner, useOnlineStatus } from "./NetworkBanner";
 
-const WRITE_BUTTON_SELECTOR =
-  'button[type="submit"], button[data-write="true"]';
+const WRITE_CONTROL_SELECTOR = [
+  'button[type="submit"]',
+  'button[data-write="true"]',
+  'select[data-write="true"]',
+  'input[type="file"][data-write="true"]',
+].join(", ");
 
-function syncWriteButtons(root: HTMLElement, online: boolean) {
-  const buttons = root.querySelectorAll<HTMLButtonElement>(WRITE_BUTTON_SELECTOR);
-  for (const button of buttons) {
+function syncWriteControls(root: HTMLElement, online: boolean) {
+  const controls = root.querySelectorAll<
+    HTMLButtonElement | HTMLSelectElement | HTMLInputElement
+  >(WRITE_CONTROL_SELECTOR);
+  for (const control of controls) {
     if (!online) {
-      if (button.dataset.offlineWasDisabled === undefined) {
-        button.dataset.offlineWasDisabled = button.disabled ? "1" : "0";
+      if (control.dataset.offlineWasDisabled === undefined) {
+        control.dataset.offlineWasDisabled = control.disabled ? "1" : "0";
       }
-      button.disabled = true;
-    } else if (button.dataset.offlineWasDisabled !== undefined) {
-      button.disabled = button.dataset.offlineWasDisabled === "1";
-      delete button.dataset.offlineWasDisabled;
+      control.disabled = true;
+    } else if (control.dataset.offlineWasDisabled !== undefined) {
+      control.disabled = control.dataset.offlineWasDisabled === "1";
+      delete control.dataset.offlineWasDisabled;
     }
   }
 }
@@ -40,7 +46,7 @@ export function AppShell({ children }: AppShellProps) {
       return;
     }
 
-    const apply = () => syncWriteButtons(root, online);
+    const apply = () => syncWriteControls(root, online);
     apply();
 
     const observer = new MutationObserver(apply);

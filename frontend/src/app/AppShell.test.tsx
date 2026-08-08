@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 
+import { MealRequests } from "../features/meals/MealRequests";
 import { MenuEditor } from "../features/meals/MenuEditor";
 import { AppShell } from "./AppShell";
 
@@ -70,4 +71,24 @@ it("disables real feature write controls marked data-write while offline", () =>
   expect(screen.getByRole("button", { name: "确认菜单" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "晚餐" })).not.toBeDisabled();
   expect(screen.getByRole("link", { name: "今天" })).toBeVisible();
+});
+
+it("disables MealRequests dish picker select while offline", () => {
+  mockNavigatorOnline(false);
+  const onRequest = vi.fn();
+  renderShell(
+    <AppShell>
+      <MealRequests
+        requests={[]}
+        currentMemberId="m1"
+        onRequest={onRequest}
+        onWithdraw={() => {}}
+        dishOptions={[{ id: "d1", name: "番茄炒蛋" }]}
+      />
+    </AppShell>,
+  );
+
+  const select = screen.getByRole("combobox", { name: "点一道菜" });
+  expect(select).toBeDisabled();
+  expect(onRequest).not.toHaveBeenCalled();
 });

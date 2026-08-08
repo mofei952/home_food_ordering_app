@@ -69,6 +69,7 @@ export function ImageField({
         菜品图片
         <input
           type="file"
+          data-write="true"
           accept="image/jpeg,image/png,image/webp"
           onChange={(event) => void handleFileChange(event)}
           disabled={disabled || uploading}
