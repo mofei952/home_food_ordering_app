@@ -8,14 +8,15 @@ import {
 } from "../features/households/api";
 import { FamilyPage } from "../features/households/FamilyPage";
 import { OnboardingPage } from "../features/households/OnboardingPage";
+import { TodayPage } from "../features/meals/TodayPage";
 
-type AppView = "family" | "dishes";
+type AppView = "today" | "dishes" | "family";
 
 export function App() {
   const [session, setSession] = useState<SessionResponse | null>();
   const [inviteCode, setInviteCode] = useState<string>();
   const [error, setError] = useState<string>();
-  const [view, setView] = useState<AppView>("dishes");
+  const [view, setView] = useState<AppView>("today");
 
   async function loadSession(newInviteCode?: string) {
     setError(undefined);
@@ -62,6 +63,13 @@ export function App() {
           <nav aria-label="主导航">
             <button
               type="button"
+              aria-current={view === "today" ? "page" : undefined}
+              onClick={() => setView("today")}
+            >
+              今天
+            </button>
+            <button
+              type="button"
               aria-current={view === "dishes" ? "page" : undefined}
               onClick={() => setView("dishes")}
             >
@@ -75,7 +83,9 @@ export function App() {
               家庭
             </button>
           </nav>
-          {view === "dishes" ? (
+          {view === "today" ? (
+            <TodayPage session={session} />
+          ) : view === "dishes" ? (
             <DishListPage members={session.members} />
           ) : (
             <FamilyPage

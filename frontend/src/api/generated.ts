@@ -162,6 +162,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/meal-slots/{local_date}/{meal_type}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Meal Slot */
+        get: operations["get_meal_slot_api_meal_slots__local_date___meal_type__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/meal-slots/{slot_id}/requests/{dish_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Meal Request */
+        put: operations["put_meal_request_api_meal_slots__slot_id__requests__dish_id__put"];
+        post?: never;
+        /** Delete Meal Request */
+        delete: operations["delete_meal_request_api_meal_slots__slot_id__requests__dish_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/meal-slots/{slot_id}/menu": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Meal Menu */
+        put: operations["put_meal_menu_api_meal_slots__slot_id__menu_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -332,6 +384,48 @@ export interface components {
             /** Pin */
             pin: string;
         };
+        /** LastModifierSummary */
+        LastModifierSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Nickname */
+            nickname: string;
+        };
+        /** MealSlotRead */
+        MealSlotRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Local Date
+             * Format: date
+             */
+            local_date: string;
+            /**
+             * Meal Type
+             * @enum {string}
+             */
+            meal_type: "lunch" | "dinner";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "not_started" | "pending" | "confirmed";
+            /** Version */
+            version: number;
+            /** Requests */
+            requests: components["schemas"]["MergedMealRequestRead"][];
+            /** Menu */
+            menu: components["schemas"]["MenuItemRead"][];
+            last_modified_by: components["schemas"]["LastModifierSummary"] | null;
+            /** Last Modified At */
+            last_modified_at: string | null;
+        };
         /** MemberSummary */
         MemberSummary: {
             /**
@@ -351,6 +445,49 @@ export interface components {
              * @enum {string}
              */
             status: "active" | "disabled";
+        };
+        /** MenuItemRead */
+        MenuItemRead: {
+            /**
+             * Dish Id
+             * Format: uuid
+             */
+            dish_id: string;
+            /** Dish Name */
+            dish_name: string;
+            /** Image Key */
+            image_key: string | null;
+        };
+        /** MenuUpdate */
+        MenuUpdate: {
+            /** Dish Ids */
+            dish_ids?: string[];
+            /** Expected Version */
+            expected_version: number;
+        };
+        /** MergedMealRequestRead */
+        MergedMealRequestRead: {
+            /**
+             * Dish Id
+             * Format: uuid
+             */
+            dish_id: string;
+            /** Dish Name */
+            dish_name: string;
+            /** Image Key */
+            image_key: string | null;
+            /** Requested By */
+            requested_by: components["schemas"]["RequestedBySummary"][];
+        };
+        /** RequestedBySummary */
+        RequestedBySummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Nickname */
+            nickname: string;
         };
         /** ResetPinRequest */
         ResetPinRequest: {
@@ -805,6 +942,135 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IngredientRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_meal_slot_api_meal_slots__local_date___meal_type__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                local_date: string;
+                meal_type: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MealSlotRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_meal_request_api_meal_slots__slot_id__requests__dish_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+                dish_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MealSlotRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_meal_request_api_meal_slots__slot_id__requests__dish_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+                dish_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_meal_menu_api_meal_slots__slot_id__menu_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MealSlotRead"];
                 };
             };
             /** @description Validation Error */

@@ -541,6 +541,196 @@
         }
       }
     },
+    "/api/meal-slots/{local_date}/{meal_type}": {
+      "get": {
+        "summary": "Get Meal Slot",
+        "operationId": "get_meal_slot_api_meal_slots__local_date___meal_type__get",
+        "parameters": [
+          {
+            "name": "local_date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Local Date"
+            }
+          },
+          {
+            "name": "meal_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Meal Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealSlotRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meal-slots/{slot_id}/requests/{dish_id}": {
+      "put": {
+        "summary": "Put Meal Request",
+        "operationId": "put_meal_request_api_meal_slots__slot_id__requests__dish_id__put",
+        "parameters": [
+          {
+            "name": "slot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Slot Id"
+            }
+          },
+          {
+            "name": "dish_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Dish Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealSlotRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Meal Request",
+        "operationId": "delete_meal_request_api_meal_slots__slot_id__requests__dish_id__delete",
+        "parameters": [
+          {
+            "name": "slot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Slot Id"
+            }
+          },
+          {
+            "name": "dish_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Dish Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meal-slots/{slot_id}/menu": {
+      "put": {
+        "summary": "Put Meal Menu",
+        "operationId": "put_meal_menu_api_meal_slots__slot_id__menu_put",
+        "parameters": [
+          {
+            "name": "slot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Slot Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MenuUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealSlotRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health",
@@ -991,6 +1181,109 @@
         ],
         "title": "JoinHouseholdRequest"
       },
+      "LastModifierSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nickname": {
+            "type": "string",
+            "title": "Nickname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nickname"
+        ],
+        "title": "LastModifierSummary"
+      },
+      "MealSlotRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "local_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Local Date"
+          },
+          "meal_type": {
+            "type": "string",
+            "enum": [
+              "lunch",
+              "dinner"
+            ],
+            "title": "Meal Type"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_started",
+              "pending",
+              "confirmed"
+            ],
+            "title": "Status"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "requests": {
+            "items": {
+              "$ref": "#/components/schemas/MergedMealRequestRead"
+            },
+            "type": "array",
+            "title": "Requests"
+          },
+          "menu": {
+            "items": {
+              "$ref": "#/components/schemas/MenuItemRead"
+            },
+            "type": "array",
+            "title": "Menu"
+          },
+          "last_modified_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LastModifierSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_modified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Modified At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "local_date",
+          "meal_type",
+          "status",
+          "version",
+          "requests",
+          "menu",
+          "last_modified_by",
+          "last_modified_at"
+        ],
+        "title": "MealSlotRead"
+      },
       "MemberSummary": {
         "properties": {
           "id": {
@@ -1027,6 +1320,117 @@
           "status"
         ],
         "title": "MemberSummary"
+      },
+      "MenuItemRead": {
+        "properties": {
+          "dish_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Dish Id"
+          },
+          "dish_name": {
+            "type": "string",
+            "title": "Dish Name"
+          },
+          "image_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dish_id",
+          "dish_name",
+          "image_key"
+        ],
+        "title": "MenuItemRead"
+      },
+      "MenuUpdate": {
+        "properties": {
+          "dish_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Dish Ids"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_version"
+        ],
+        "title": "MenuUpdate"
+      },
+      "MergedMealRequestRead": {
+        "properties": {
+          "dish_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Dish Id"
+          },
+          "dish_name": {
+            "type": "string",
+            "title": "Dish Name"
+          },
+          "image_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Key"
+          },
+          "requested_by": {
+            "items": {
+              "$ref": "#/components/schemas/RequestedBySummary"
+            },
+            "type": "array",
+            "title": "Requested By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dish_id",
+          "dish_name",
+          "image_key",
+          "requested_by"
+        ],
+        "title": "MergedMealRequestRead"
+      },
+      "RequestedBySummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nickname": {
+            "type": "string",
+            "title": "Nickname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nickname"
+        ],
+        "title": "RequestedBySummary"
       },
       "ResetPinRequest": {
         "properties": {

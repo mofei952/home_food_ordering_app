@@ -30,6 +30,7 @@ export class ApiError extends Error {
     message: string,
     readonly status: number,
     readonly code: string,
+    readonly currentVersion?: number,
   ) {
     super(message);
   }
@@ -46,11 +47,11 @@ export class ApiError extends Error {
           : "请求失败";
     const code =
       typeof body.code === "string" ? body.code : "http_error";
-    return new ApiError(
-      message,
-      response.status,
-      code,
-    );
+    const currentVersion =
+      typeof body.current_version === "number"
+        ? body.current_version
+        : undefined;
+    return new ApiError(message, response.status, code, currentVersion);
   }
 }
 
@@ -61,5 +62,6 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     headers: { "Content-Type": "application/json", ...init?.headers },
   });
   if (!response.ok) throw await ApiError.fromResponse(response);
+  if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
