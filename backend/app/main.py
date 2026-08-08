@@ -4,6 +4,7 @@ from collections.abc import Callable
 from fastapi import FastAPI
 
 from app.config import Settings
+from app.dishes.router import router as dishes_router
 from app.errors import install_error_handlers
 from app.households.router import router as households_router
 from app.security import SlidingWindowRateLimiter
@@ -20,6 +21,7 @@ def create_app(
     app.state.secure_cookies = app_settings.environment != "development"
     install_error_handlers(app)
     app.include_router(households_router)
+    app.include_router(dishes_router)
 
     @app.get("/api/health")
     async def health() -> dict[str, str]:

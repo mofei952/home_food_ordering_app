@@ -4,7 +4,7 @@ from typing import Any
 from uuid import UUID
 
 import pytest
-from conftest import MutableClock
+from tests.conftest import MutableClock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx2 import Response

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { ApiError } from "../api/client";
+import { DishListPage } from "../features/dishes/DishListPage";
 import {
   getSession,
   SessionResponse,
@@ -8,10 +9,13 @@ import {
 import { FamilyPage } from "../features/households/FamilyPage";
 import { OnboardingPage } from "../features/households/OnboardingPage";
 
+type AppView = "family" | "dishes";
+
 export function App() {
   const [session, setSession] = useState<SessionResponse | null>();
   const [inviteCode, setInviteCode] = useState<string>();
   const [error, setError] = useState<string>();
+  const [view, setView] = useState<AppView>("dishes");
 
   async function loadSession(newInviteCode?: string) {
     setError(undefined);
@@ -54,11 +58,33 @@ export function App() {
       ) : session === null ? (
         <OnboardingPage onAuthenticated={loadSession} />
       ) : (
-        <FamilyPage
-          session={session}
-          initialInviteCode={inviteCode}
-          onLoggedOut={() => setSession(null)}
-        />
+        <>
+          <nav aria-label="主导航">
+            <button
+              type="button"
+              aria-current={view === "dishes" ? "page" : undefined}
+              onClick={() => setView("dishes")}
+            >
+              菜品
+            </button>
+            <button
+              type="button"
+              aria-current={view === "family" ? "page" : undefined}
+              onClick={() => setView("family")}
+            >
+              家庭
+            </button>
+          </nav>
+          {view === "dishes" ? (
+            <DishListPage members={session.members} />
+          ) : (
+            <FamilyPage
+              session={session}
+              initialInviteCode={inviteCode}
+              onLoggedOut={() => setSession(null)}
+            />
+          )}
+        </>
       )}
     </main>
   );

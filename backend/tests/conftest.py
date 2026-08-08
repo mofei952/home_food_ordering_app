@@ -16,6 +16,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.config import Settings
 from app.db import Base, get_session
+from app.dishes import models as dish_models  # noqa: F401
 from app.households import models as household_models  # noqa: F401
 from app.main import create_app
 

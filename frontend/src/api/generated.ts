@@ -107,6 +107,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dishes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dishes */
+        get: operations["get_dishes_api_dishes_get"];
+        put?: never;
+        /** Post Dish */
+        post: operations["post_dish_api_dishes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dishes/{dish_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dish */
+        get: operations["get_dish_api_dishes__dish_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Dish */
+        delete: operations["delete_dish_api_dishes__dish_id__delete"];
+        options?: never;
+        head?: never;
+        /** Patch Dish */
+        patch: operations["patch_dish_api_dishes__dish_id__patch"];
+        trace?: never;
+    };
+    "/api/ingredients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Ingredients */
+        get: operations["get_ingredients_api_ingredients_get"];
+        put?: never;
+        /** Post Ingredient */
+        post: operations["post_ingredient_api_ingredients_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -133,6 +188,16 @@ export interface components {
             household: components["schemas"]["HouseholdSummary"];
             member: components["schemas"]["MemberSummary"];
         };
+        /** CookSummary */
+        CookSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Nickname */
+            nickname: string;
+        };
         /** CreateHouseholdRequest */
         CreateHouseholdRequest: {
             /** Household Name */
@@ -151,6 +216,67 @@ export interface components {
             /** Invite Code */
             invite_code: string;
         };
+        /** DishCreate */
+        DishCreate: {
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "荤菜" | "素菜" | "主食" | "汤" | "其他";
+            /** Cook Ids */
+            cook_ids: string[];
+            /** Ingredients */
+            ingredients: string[];
+            /** Image Key */
+            image_key?: string | null;
+        };
+        /** DishRead */
+        DishRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "荤菜" | "素菜" | "主食" | "汤" | "其他";
+            /** Cooks */
+            cooks: components["schemas"]["CookSummary"][];
+            /** Ingredients */
+            ingredients: components["schemas"]["IngredientSummary"][];
+            /** Image Url */
+            image_url: string | null;
+            /** Archived At */
+            archived_at: string | null;
+            updated_by: components["schemas"]["UpdatedBySummary"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** DishUpdate */
+        DishUpdate: {
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "荤菜" | "素菜" | "主食" | "汤" | "其他";
+            /** Cook Ids */
+            cook_ids: string[];
+            /** Ingredients */
+            ingredients: string[];
+            /** Image Key */
+            image_key?: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -167,6 +293,35 @@ export interface components {
             name: string;
             /** Timezone */
             timezone: string;
+        };
+        /** IngredientCreate */
+        IngredientCreate: {
+            /** Name */
+            name: string;
+            /** Aliases */
+            aliases?: string[];
+        };
+        /** IngredientRead */
+        IngredientRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Aliases */
+            aliases: string[];
+        };
+        /** IngredientSummary */
+        IngredientSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
         };
         /** JoinHouseholdRequest */
         JoinHouseholdRequest: {
@@ -213,6 +368,16 @@ export interface components {
             member: components["schemas"]["MemberSummary"];
             /** Members */
             members: components["schemas"]["MemberSummary"][];
+        };
+        /** UpdatedBySummary */
+        UpdatedBySummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Nickname */
+            nickname: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -413,6 +578,233 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemberSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dishes_api_dishes_get: {
+        parameters: {
+            query?: {
+                cook_id?: string | null;
+                category?: string | null;
+                include_archived?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DishRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_dish_api_dishes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DishCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DishRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dish_api_dishes__dish_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dish_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DishRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_dish_api_dishes__dish_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dish_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DishRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_dish_api_dishes__dish_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dish_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DishUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DishRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ingredients_api_ingredients_get: {
+        parameters: {
+            query?: {
+                query?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IngredientRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_ingredient_api_ingredients_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IngredientCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IngredientRead"];
                 };
             };
             /** @description Validation Error */
