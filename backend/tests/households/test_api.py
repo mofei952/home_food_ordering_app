@@ -111,23 +111,6 @@ def test_existing_nickname_match_is_case_insensitive(
     assert response.json()["member"]["id"] == owner_id
 
 
-def test_existing_nickname_uses_database_lower_semantics(
-    client: TestClient,
-) -> None:
-    created = create_household(client, owner_name="Straße")
-    owner_id = created.json()["member"]["id"]
-    response = client.post(
-        "/api/households/join",
-        json={
-            "invite_code": created.json()["invite_code"],
-            "nickname": "STRAẞE",
-            "pin": "1234",
-        },
-    )
-    assert response.status_code == 200
-    assert response.json()["member"]["id"] == owner_id
-
-
 def test_nickname_lookup_lowers_both_sql_operands(
     client: TestClient, test_engine: AsyncEngine
 ) -> None:

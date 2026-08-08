@@ -36,6 +36,7 @@ from app.households.service import (
 )
 from app.security import (
     generate_invite_code,
+    hash_pin,
     hash_secret,
     normalize_client_ip,
 )
