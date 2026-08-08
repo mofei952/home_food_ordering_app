@@ -1,0 +1,5 @@
+# 公网 HTTPS 隧道：Session Cookie 使用 Secure。
+services:
+  backend:
+    environment:
+      SECURE_COOKIES: "true"

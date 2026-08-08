@@ -104,7 +104,19 @@ Backend 容器入口脚本会在启动 uvicorn 前执行 `alembic upgrade head`�
 - MinIO：`S3_ENDPOINT_URL=http://minio:9000`（容器内），`S3_PUBLIC_ENDPOINT_URL=http://127.0.0.1:9000`（浏览器签名 URL）
 - 端口：Caddy `8080`，Postgres `5432`，MinIO API `9000` / Console `9001`
 
-`deploy/Caddyfile` 保证浏览器只与同一来源通信，Session Cookie 不会变成跨站请求。
+`deploy/Caddyfile` 保证浏览器只与同一来源通信，Session Cookie 不会变成跨站请求。`/family-menu/*` 经 Caddy 反代 MinIO，供公网 HTTPS 下的图片签名 URL 使用。
+
+## 公网临时演示（Cloud Agent / 无入站端口）
+
+云端 VM 通常无法从互联网直接访问 `:8080`。可用宿主机栈 + Cloudflare 临时隧道：
+
+```bash
+./scripts/deploy-public-native.sh
+```
+
+脚本会构建前端、启动 MinIO + API + Caddy（`:8080`），并输出 `https://*.trycloudflare.com` 公网地址。数据在 `/tmp/family-menu-data`（SQLite + MinIO 本地目录）。
+
+注意：隧道域名在 `cloudflared` 重启后会变；Agent 关机后服务停止。长期生产请用自有域名、固定隧道或云主机 + `docker compose`（见 `scripts/deploy-public.sh`）。
 
 ## 测试与统一验收
 
