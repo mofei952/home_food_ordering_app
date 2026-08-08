@@ -1,14 +1,23 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, expect, it, vi } from "vitest";
 
 import { App } from "./App";
+
+function renderApp() {
+  return render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>,
+  );
+}
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
 it("renders the product name", () => {
-  render(<App />);
+  renderApp();
   expect(screen.getByRole("heading", { name: "家庭点菜" })).toBeVisible();
 });
 
@@ -18,7 +27,7 @@ it("shows a Chinese service error and retry for session network failures", async
     .mockRejectedValue(new TypeError("Failed to fetch"));
   vi.stubGlobal("fetch", fetchMock);
 
-  render(<App />);
+  renderApp();
 
   expect(
     await screen.findByRole("alert", {

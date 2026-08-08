@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
 
 import { ApiError } from "../api/client";
 import { DishListPage } from "../features/dishes/DishListPage";
@@ -10,14 +11,12 @@ import { FamilyPage } from "../features/households/FamilyPage";
 import { OnboardingPage } from "../features/households/OnboardingPage";
 import { TodayPage } from "../features/meals/TodayPage";
 import { ChooseForMePage } from "../features/recommendations/ChooseForMePage";
-
-type AppView = "today" | "dishes" | "choose" | "family";
+import { AppShell } from "./AppShell";
 
 export function App() {
   const [session, setSession] = useState<SessionResponse | null>();
   const [inviteCode, setInviteCode] = useState<string>();
   const [error, setError] = useState<string>();
-  const [view, setView] = useState<AppView>("today");
 
   async function loadSession(newInviteCode?: string) {
     setError(undefined);
@@ -60,51 +59,30 @@ export function App() {
       ) : session === null ? (
         <OnboardingPage onAuthenticated={loadSession} />
       ) : (
-        <>
-          <nav aria-label="主导航">
-            <button
-              type="button"
-              aria-current={view === "today" ? "page" : undefined}
-              onClick={() => setView("today")}
-            >
-              今天
-            </button>
-            <button
-              type="button"
-              aria-current={view === "dishes" ? "page" : undefined}
-              onClick={() => setView("dishes")}
-            >
-              菜品
-            </button>
-            <button
-              type="button"
-              aria-current={view === "choose" ? "page" : undefined}
-              onClick={() => setView("choose")}
-            >
-              帮我选
-            </button>
-            <button
-              type="button"
-              aria-current={view === "family" ? "page" : undefined}
-              onClick={() => setView("family")}
-            >
-              家庭
-            </button>
-          </nav>
-          {view === "today" ? (
-            <TodayPage session={session} />
-          ) : view === "dishes" ? (
-            <DishListPage members={session.members} />
-          ) : view === "choose" ? (
-            <ChooseForMePage session={session} />
-          ) : (
-            <FamilyPage
-              session={session}
-              initialInviteCode={inviteCode}
-              onLoggedOut={() => setSession(null)}
+        <Routes>
+          <Route element={<AppShell />}>
+            <Route index element={<TodayPage session={session} />} />
+            <Route
+              path="dishes"
+              element={<DishListPage members={session.members} />}
             />
-          )}
-        </>
+            <Route
+              path="choose"
+              element={<ChooseForMePage session={session} />}
+            />
+            <Route
+              path="family"
+              element={
+                <FamilyPage
+                  session={session}
+                  initialInviteCode={inviteCode}
+                  onLoggedOut={() => setSession(null)}
+                />
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
       )}
     </main>
   );
