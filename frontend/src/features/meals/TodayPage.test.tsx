@@ -34,6 +34,7 @@ const session = {
       status: "active" as const,
     },
   ],
+  invite_code: "ABCDEFGH",
 };
 
 const dishes = [
