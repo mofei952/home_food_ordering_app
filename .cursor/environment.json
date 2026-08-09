@@ -1,0 +1,19 @@
+{
+  "name": "家庭点菜",
+  "install": "export PATH=\"$HOME/.local/bin:$PATH\" && (command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh) && export PATH=\"$HOME/.local/bin:$PATH\" && cd backend && uv sync && DATABASE_URL=sqlite+aiosqlite:////tmp/family-menu-dev.db IMAGE_STORAGE=memory ENVIRONMENT=development uv run python scripts/reset_sqlite_schema.py && cd ../frontend && npm ci",
+  "terminals": [
+    {
+      "name": "api",
+      "command": "export PATH=\"$HOME/.local/bin:$PATH\" && cd backend && DATABASE_URL=sqlite+aiosqlite:////tmp/family-menu-dev.db IMAGE_STORAGE=memory ENVIRONMENT=development uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+      "description": "FastAPI on port 8000 (前端 Vite 代理 /api)"
+    },
+    {
+      "name": "web",
+      "command": "cd frontend && npm run dev -- --host 0.0.0.0 --port 5173",
+      "description": "Vite 开发服务器，浏览器访问端口 5173"
+    }
+  ],
+  "ports": [
+    { "name": "web", "port": 5173 }
+  ]
+}

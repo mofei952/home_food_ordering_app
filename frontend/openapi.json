@@ -1,0 +1,2526 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "家庭点菜 API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/households": {
+      "post": {
+        "summary": "Create Household",
+        "operationId": "create_household_api_households_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHouseholdRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateHouseholdResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/join": {
+      "post": {
+        "summary": "Join Household",
+        "operationId": "join_household_api_households_join_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinHouseholdRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/session": {
+      "get": {
+        "summary": "Get Current Session",
+        "operationId": "get_current_session_api_session_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Current Session",
+        "operationId": "delete_current_session_api_session_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/api/households/invite/rotate": {
+      "post": {
+        "summary": "Rotate Invite",
+        "operationId": "rotate_invite_api_households_invite_rotate_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RotateInviteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/members/{member_id}/disable": {
+      "post": {
+        "summary": "Disable Member",
+        "operationId": "disable_member_api_households_members__member_id__disable_post",
+        "parameters": [
+          {
+            "name": "member_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Member Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/members/{member_id}/pin/reset": {
+      "post": {
+        "summary": "Reset Member Pin",
+        "operationId": "reset_member_pin_api_households_members__member_id__pin_reset_post",
+        "parameters": [
+          {
+            "name": "member_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Member Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPinRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dishes": {
+      "get": {
+        "summary": "Get Dishes",
+        "operationId": "get_dishes_api_dishes_get",
+        "parameters": [
+          {
+            "name": "cook_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cook Id"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "include_archived",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Archived"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DishRead"
+                  },
+                  "title": "Response Get Dishes Api Dishes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Post Dish",
+        "operationId": "post_dish_api_dishes_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DishCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DishRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dishes/{dish_id}": {
+      "get": {
+        "summary": "Get Dish",
+        "operationId": "get_dish_api_dishes__dish_id__get",
+        "parameters": [
+          {
+            "name": "dish_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Dish Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DishRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Patch Dish",
+        "operationId": "patch_dish_api_dishes__dish_id__patch",
+        "parameters": [
+          {
+            "name": "dish_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Dish Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DishUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DishRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Dish",
+        "operationId": "delete_dish_api_dishes__dish_id__delete",
+        "parameters": [
+          {
+            "name": "dish_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Dish Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DishRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ingredients": {
+      "get": {
+        "summary": "Get Ingredients",
+        "operationId": "get_ingredients_api_ingredients_get",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Query"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IngredientRead"
+                  },
+                  "title": "Response Get Ingredients Api Ingredients Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Post Ingredient",
+        "operationId": "post_ingredient_api_ingredients_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngredientCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngredientRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meal-slots/{local_date}/{meal_type}": {
+      "get": {
+        "summary": "Get Meal Slot",
+        "operationId": "get_meal_slot_api_meal_slots__local_date___meal_type__get",
+        "parameters": [
+          {
+            "name": "local_date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Local Date"
+            }
+          },
+          {
+            "name": "meal_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Meal Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealSlotRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meal-slots/{slot_id}/requests/{dish_id}": {
+      "put": {
+        "summary": "Put Meal Request",
+        "operationId": "put_meal_request_api_meal_slots__slot_id__requests__dish_id__put",
+        "parameters": [
+          {
+            "name": "slot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Slot Id"
+            }
+          },
+          {
+            "name": "dish_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Dish Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealSlotRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Meal Request",
+        "operationId": "delete_meal_request_api_meal_slots__slot_id__requests__dish_id__delete",
+        "parameters": [
+          {
+            "name": "slot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Slot Id"
+            }
+          },
+          {
+            "name": "dish_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Dish Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meal-slots/{slot_id}/menu": {
+      "put": {
+        "summary": "Put Meal Menu",
+        "operationId": "put_meal_menu_api_meal_slots__slot_id__menu_put",
+        "parameters": [
+          {
+            "name": "slot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Slot Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MenuUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealSlotRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recommendations/search": {
+      "post": {
+        "summary": "Post Search",
+        "operationId": "post_search_api_recommendations_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recommendations/random": {
+      "post": {
+        "summary": "Post Random",
+        "operationId": "post_random_api_recommendations_random_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RandomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RandomResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/events": {
+      "post": {
+        "summary": "Create Event",
+        "operationId": "create_event_api_events_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/validation-checkins/{week_start}": {
+      "put": {
+        "summary": "Put Validation Checkin",
+        "operationId": "put_validation_checkin_api_validation_checkins__week_start__put",
+        "parameters": [
+          {
+            "name": "week_start",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Week Start"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationCheckinWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationCheckinRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/history": {
+      "get": {
+        "summary": "Get History",
+        "operationId": "get_history_api_history_get",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HistoryEntry"
+                  },
+                  "title": "Response Get History Api History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics/summary": {
+      "get": {
+        "summary": "Get Metrics Summary",
+        "operationId": "get_metrics_summary_api_metrics_summary_get",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/images": {
+      "post": {
+        "summary": "Post Image",
+        "operationId": "post_image_api_images_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_post_image_api_images_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageUploadRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Api Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AuthResponse": {
+        "properties": {
+          "household": {
+            "$ref": "#/components/schemas/HouseholdSummary"
+          },
+          "member": {
+            "$ref": "#/components/schemas/MemberSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "household",
+          "member"
+        ],
+        "title": "AuthResponse"
+      },
+      "Body_post_image_api_images_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_post_image_api_images_post"
+      },
+      "ConfirmationDetail": {
+        "properties": {
+          "meal_slot_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Meal Slot Id"
+          },
+          "local_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Date"
+          },
+          "meal_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "lunch",
+                  "dinner"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meal Type"
+          },
+          "request_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Count"
+          },
+          "participant_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participant Count"
+          },
+          "confirmation_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmation Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "meal_slot_id"
+        ],
+        "title": "ConfirmationDetail"
+      },
+      "CookSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nickname": {
+            "type": "string",
+            "title": "Nickname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nickname"
+        ],
+        "title": "CookSummary"
+      },
+      "CreateHouseholdRequest": {
+        "properties": {
+          "household_name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Household Name"
+          },
+          "owner_name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Owner Name"
+          },
+          "pin": {
+            "type": "string",
+            "pattern": "^\\d{4,6}$",
+            "title": "Pin"
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Timezone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "household_name",
+          "owner_name",
+          "pin",
+          "timezone"
+        ],
+        "title": "CreateHouseholdRequest"
+      },
+      "CreateHouseholdResponse": {
+        "properties": {
+          "household": {
+            "$ref": "#/components/schemas/HouseholdSummary"
+          },
+          "member": {
+            "$ref": "#/components/schemas/MemberSummary"
+          },
+          "invite_code": {
+            "type": "string",
+            "title": "Invite Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "household",
+          "member",
+          "invite_code"
+        ],
+        "title": "CreateHouseholdResponse"
+      },
+      "DecisionSourceCounts": {
+        "properties": {
+          "direct": {
+            "type": "integer",
+            "title": "Direct",
+            "default": 0
+          },
+          "random": {
+            "type": "integer",
+            "title": "Random",
+            "default": 0
+          },
+          "ingredient": {
+            "type": "integer",
+            "title": "Ingredient",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "DecisionSourceCounts"
+      },
+      "DishCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "荤菜",
+              "素菜",
+              "主食",
+              "汤",
+              "其他"
+            ],
+            "title": "Category"
+          },
+          "cook_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Cook Ids"
+          },
+          "ingredients": {
+            "items": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Ingredients"
+          },
+          "image_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "category",
+          "cook_ids",
+          "ingredients"
+        ],
+        "title": "DishCreate"
+      },
+      "DishRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "荤菜",
+              "素菜",
+              "主食",
+              "汤",
+              "其他"
+            ],
+            "title": "Category"
+          },
+          "cooks": {
+            "items": {
+              "$ref": "#/components/schemas/CookSummary"
+            },
+            "type": "array",
+            "title": "Cooks"
+          },
+          "ingredients": {
+            "items": {
+              "$ref": "#/components/schemas/IngredientSummary"
+            },
+            "type": "array",
+            "title": "Ingredients"
+          },
+          "image_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Key"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "updated_by": {
+            "$ref": "#/components/schemas/UpdatedBySummary"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "cooks",
+          "ingredients",
+          "image_key",
+          "image_url",
+          "archived_at",
+          "updated_by",
+          "updated_at"
+        ],
+        "title": "DishRead"
+      },
+      "DishUpdate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "荤菜",
+              "素菜",
+              "主食",
+              "汤",
+              "其他"
+            ],
+            "title": "Category"
+          },
+          "cook_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Cook Ids"
+          },
+          "ingredients": {
+            "items": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Ingredients"
+          },
+          "image_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "category",
+          "cook_ids",
+          "ingredients"
+        ],
+        "title": "DishUpdate"
+      },
+      "EventCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "meal_opened",
+              "first_request_added",
+              "menu_confirmed",
+              "menu_modified"
+            ],
+            "title": "Name"
+          },
+          "properties": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Properties"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "EventCreate"
+      },
+      "EventRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "enum": [
+              "meal_opened",
+              "first_request_added",
+              "menu_confirmed",
+              "menu_modified"
+            ],
+            "title": "Name"
+          },
+          "properties": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Properties"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "properties",
+          "created_at"
+        ],
+        "title": "EventRead"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HistoryEntry": {
+        "properties": {
+          "meal_slot_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Meal Slot Id"
+          },
+          "local_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Local Date"
+          },
+          "meal_type": {
+            "type": "string",
+            "enum": [
+              "lunch",
+              "dinner"
+            ],
+            "title": "Meal Type"
+          },
+          "menu": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryMenuItem"
+            },
+            "type": "array",
+            "title": "Menu"
+          },
+          "last_modified_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HistoryLastModifier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_modified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Modified At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "meal_slot_id",
+          "local_date",
+          "meal_type",
+          "menu",
+          "last_modified_by",
+          "last_modified_at"
+        ],
+        "title": "HistoryEntry"
+      },
+      "HistoryLastModifier": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nickname": {
+            "type": "string",
+            "title": "Nickname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nickname"
+        ],
+        "title": "HistoryLastModifier"
+      },
+      "HistoryMenuItem": {
+        "properties": {
+          "dish_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Dish Id"
+          },
+          "dish_name": {
+            "type": "string",
+            "title": "Dish Name"
+          },
+          "image_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dish_id",
+          "dish_name",
+          "image_key"
+        ],
+        "title": "HistoryMenuItem"
+      },
+      "HouseholdSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "timezone"
+        ],
+        "title": "HouseholdSummary"
+      },
+      "ImageUploadRead": {
+        "properties": {
+          "image_key": {
+            "type": "string",
+            "title": "Image Key"
+          },
+          "image_url": {
+            "type": "string",
+            "title": "Image Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image_key",
+          "image_url"
+        ],
+        "title": "ImageUploadRead"
+      },
+      "IngredientCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "aliases": {
+            "items": {
+              "type": "string",
+              "maxLength": 100,
+              "minLength": 1
+            },
+            "type": "array",
+            "title": "Aliases"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "IngredientCreate"
+      },
+      "IngredientRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Aliases"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "aliases"
+        ],
+        "title": "IngredientRead"
+      },
+      "IngredientSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "IngredientSummary"
+      },
+      "JoinHouseholdRequest": {
+        "properties": {
+          "invite_code": {
+            "type": "string",
+            "pattern": "^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$",
+            "title": "Invite Code"
+          },
+          "nickname": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Nickname"
+          },
+          "pin": {
+            "type": "string",
+            "pattern": "^\\d{4,6}$",
+            "title": "Pin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "invite_code",
+          "nickname",
+          "pin"
+        ],
+        "title": "JoinHouseholdRequest"
+      },
+      "LastModifierSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nickname": {
+            "type": "string",
+            "title": "Nickname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nickname"
+        ],
+        "title": "LastModifierSummary"
+      },
+      "MealSlotRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "local_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Local Date"
+          },
+          "meal_type": {
+            "type": "string",
+            "enum": [
+              "lunch",
+              "dinner"
+            ],
+            "title": "Meal Type"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_started",
+              "pending",
+              "confirmed"
+            ],
+            "title": "Status"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "requests": {
+            "items": {
+              "$ref": "#/components/schemas/MergedMealRequestRead"
+            },
+            "type": "array",
+            "title": "Requests"
+          },
+          "menu": {
+            "items": {
+              "$ref": "#/components/schemas/MenuItemRead"
+            },
+            "type": "array",
+            "title": "Menu"
+          },
+          "last_modified_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LastModifierSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_modified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Modified At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "local_date",
+          "meal_type",
+          "status",
+          "version",
+          "requests",
+          "menu",
+          "last_modified_by",
+          "last_modified_at"
+        ],
+        "title": "MealSlotRead"
+      },
+      "MemberSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nickname": {
+            "type": "string",
+            "title": "Nickname"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "member"
+            ],
+            "title": "Role"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nickname",
+          "role",
+          "status"
+        ],
+        "title": "MemberSummary"
+      },
+      "MenuItemRead": {
+        "properties": {
+          "dish_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Dish Id"
+          },
+          "dish_name": {
+            "type": "string",
+            "title": "Dish Name"
+          },
+          "image_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dish_id",
+          "dish_name",
+          "image_key"
+        ],
+        "title": "MenuItemRead"
+      },
+      "MenuUpdate": {
+        "properties": {
+          "dish_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Dish Ids"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_version"
+        ],
+        "title": "MenuUpdate"
+      },
+      "MergedMealRequestRead": {
+        "properties": {
+          "dish_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Dish Id"
+          },
+          "dish_name": {
+            "type": "string",
+            "title": "Dish Name"
+          },
+          "image_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Key"
+          },
+          "requested_by": {
+            "items": {
+              "$ref": "#/components/schemas/RequestedBySummary"
+            },
+            "type": "array",
+            "title": "Requested By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dish_id",
+          "dish_name",
+          "image_key",
+          "requested_by"
+        ],
+        "title": "MergedMealRequestRead"
+      },
+      "MetricsSummary": {
+        "properties": {
+          "median_confirmation_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Confirmation Seconds"
+          },
+          "app_decided_meal_ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Decided Meal Ratio"
+          },
+          "decision_source_counts": {
+            "$ref": "#/components/schemas/DecisionSourceCounts"
+          },
+          "menu_modified_count": {
+            "type": "integer",
+            "title": "Menu Modified Count"
+          },
+          "confirmation_details": {
+            "items": {
+              "$ref": "#/components/schemas/ConfirmationDetail"
+            },
+            "type": "array",
+            "title": "Confirmation Details"
+          },
+          "offline_discussion_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offline Discussion Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "median_confirmation_seconds",
+          "app_decided_meal_ratio",
+          "decision_source_counts",
+          "menu_modified_count",
+          "confirmation_details"
+        ],
+        "title": "MetricsSummary"
+      },
+      "RandomRequest": {
+        "properties": {
+          "cook_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cook Ids"
+          },
+          "categories": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "荤菜",
+                "素菜",
+                "主食",
+                "汤",
+                "其他"
+              ]
+            },
+            "type": "array",
+            "title": "Categories"
+          },
+          "available_ingredient_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Available Ingredient Ids"
+          },
+          "meal_slot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meal Slot Id"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed"
+          }
+        },
+        "type": "object",
+        "title": "RandomRequest"
+      },
+      "RandomResponse": {
+        "properties": {
+          "dish": {
+            "$ref": "#/components/schemas/RecommendedDishRead"
+          },
+          "meal_slot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meal Slot Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dish",
+          "meal_slot_id"
+        ],
+        "title": "RandomResponse"
+      },
+      "RecommendationFilters": {
+        "properties": {
+          "cook_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cook Ids"
+          },
+          "categories": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "荤菜",
+                "素菜",
+                "主食",
+                "汤",
+                "其他"
+              ]
+            },
+            "type": "array",
+            "title": "Categories"
+          },
+          "available_ingredient_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Available Ingredient Ids"
+          },
+          "meal_slot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meal Slot Id"
+          }
+        },
+        "type": "object",
+        "title": "RecommendationFilters"
+      },
+      "RecommendedDishRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "荤菜",
+              "素菜",
+              "主食",
+              "汤",
+              "其他"
+            ],
+            "title": "Category"
+          },
+          "cooks": {
+            "items": {
+              "$ref": "#/components/schemas/CookSummary"
+            },
+            "type": "array",
+            "title": "Cooks"
+          },
+          "ingredients": {
+            "items": {
+              "$ref": "#/components/schemas/IngredientSummary"
+            },
+            "type": "array",
+            "title": "Ingredients"
+          },
+          "missing_ingredients": {
+            "items": {
+              "$ref": "#/components/schemas/IngredientSummary"
+            },
+            "type": "array",
+            "title": "Missing Ingredients"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "one_missing"
+            ],
+            "title": "Visibility"
+          },
+          "last_eaten_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Eaten On"
+          },
+          "weight": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Weight"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "cooks",
+          "ingredients",
+          "missing_ingredients",
+          "visibility",
+          "last_eaten_on",
+          "weight"
+        ],
+        "title": "RecommendedDishRead"
+      },
+      "RequestedBySummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nickname": {
+            "type": "string",
+            "title": "Nickname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nickname"
+        ],
+        "title": "RequestedBySummary"
+      },
+      "ResetPinRequest": {
+        "properties": {
+          "pin": {
+            "type": "string",
+            "pattern": "^\\d{4,6}$",
+            "title": "Pin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pin"
+        ],
+        "title": "ResetPinRequest"
+      },
+      "RotateInviteResponse": {
+        "properties": {
+          "invite_code": {
+            "type": "string",
+            "title": "Invite Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "invite_code"
+        ],
+        "title": "RotateInviteResponse"
+      },
+      "SearchResponse": {
+        "properties": {
+          "ready": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendedDishRead"
+            },
+            "type": "array",
+            "title": "Ready"
+          },
+          "one_missing": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendedDishRead"
+            },
+            "type": "array",
+            "title": "One Missing"
+          },
+          "meal_slot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meal Slot Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ready",
+          "one_missing",
+          "meal_slot_id"
+        ],
+        "title": "SearchResponse"
+      },
+      "SessionResponse": {
+        "properties": {
+          "household": {
+            "$ref": "#/components/schemas/HouseholdSummary"
+          },
+          "member": {
+            "$ref": "#/components/schemas/MemberSummary"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/MemberSummary"
+            },
+            "type": "array",
+            "title": "Members"
+          }
+        },
+        "type": "object",
+        "required": [
+          "household",
+          "member",
+          "members"
+        ],
+        "title": "SessionResponse"
+      },
+      "UpdatedBySummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nickname": {
+            "type": "string",
+            "title": "Nickname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nickname"
+        ],
+        "title": "UpdatedBySummary"
+      },
+      "ValidationCheckinRead": {
+        "properties": {
+          "week_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Week Start"
+          },
+          "home_meal_count": {
+            "type": "integer",
+            "title": "Home Meal Count"
+          },
+          "offline_discussion_count": {
+            "type": "integer",
+            "title": "Offline Discussion Count"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_start",
+          "home_meal_count",
+          "offline_discussion_count",
+          "updated_at"
+        ],
+        "title": "ValidationCheckinRead"
+      },
+      "ValidationCheckinWrite": {
+        "properties": {
+          "home_meal_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Home Meal Count"
+          },
+          "offline_discussion_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Offline Discussion Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "home_meal_count",
+          "offline_discussion_count"
+        ],
+        "title": "ValidationCheckinWrite"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
