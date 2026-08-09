@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 import { IconX } from "./icons";
 
@@ -40,7 +41,7 @@ export function BottomSheet({
     return null;
   }
 
-  return (
+  return createPortal(
     <dialog
       ref={dialogRef}
       className="bottom-sheet"
@@ -67,6 +68,7 @@ export function BottomSheet({
         </button>
       </div>
       <div className="bottom-sheet__body">{children}</div>
-    </dialog>
+    </dialog>,
+    document.body,
   );
 }
