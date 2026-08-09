@@ -1,16 +1,16 @@
-.superpowers/
-.env
 
+backend/.venv/
+.env
+.env.vps
+frontend/blob-report/
+frontend/dist/
+frontend/node_modules/
+frontend/playwright-report/
+frontend/test-results/
+frontend/*.tsbuildinfo
+.mypy_cache/
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
-.mypy_cache/
-backend/.venv/
-
-frontend/node_modules/
-frontend/dist/
-frontend/*.tsbuildinfo
-frontend/test-results/
-frontend/playwright-report/
-frontend/blob-report/
+.superpowers/
