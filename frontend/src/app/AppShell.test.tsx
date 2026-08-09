@@ -63,6 +63,7 @@ it("disables real feature write controls marked data-write while offline", () =>
     <AppShell>
       <MenuEditor
         menu={[]}
+        requests={[]}
         version={0}
         confirmed={false}
         dishOptions={[{ id: "d1", name: "番茄炒蛋" }]}

@@ -440,6 +440,36 @@
   padding: 0.35rem;
 }
 
+.menu-picker-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+}
+
+.menu-picker-list__item {
+  margin-bottom: 0.35rem;
+}
+
+.menu-picker-list__label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.menu-picker-list__label input[type="checkbox"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  min-width: 1.125rem;
+  min-height: 1.125rem;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+}
+
 .today-confirm-bar {
   position: sticky;
   bottom: 0;

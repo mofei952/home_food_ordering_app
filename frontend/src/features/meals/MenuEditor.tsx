@@ -1,9 +1,29 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import type { MenuItemRead } from "./api";
+import type { MenuItemRead, MergedMealRequestRead } from "./api";
+
+function dishIdsFromMenu(menu: MenuItemRead[]): string[] {
+  return menu.map((item) => item.dish_id);
+}
+
+function dishIdsFromRequests(requests: MergedMealRequestRead[]): string[] {
+  return requests.map((item) => item.dish_id);
+}
+
+function initialSelected(
+  menu: MenuItemRead[],
+  requests: MergedMealRequestRead[],
+): string[] {
+  const menuIds = dishIdsFromMenu(menu);
+  if (menuIds.length > 0) {
+    return menuIds;
+  }
+  return dishIdsFromRequests(requests);
+}
 
 interface MenuEditorProps {
   menu: MenuItemRead[];
+  requests: MergedMealRequestRead[];
   version: number;
   dishOptions: Array<{ id: string; name: string }>;
   onConfirm: (dishIds: string[]) => Promise<void>;
@@ -13,21 +33,28 @@ interface MenuEditorProps {
 
 export function MenuEditor({
   menu,
+  requests = [],
   version,
   dishOptions,
   onConfirm,
   confirmed,
   onSelectionChange,
 }: MenuEditorProps) {
-  const [selected, setSelected] = useState<string[]>(
-    menu.map((item) => item.dish_id),
+  const [selected, setSelected] = useState<string[]>(() =>
+    initialSelected(menu, requests),
   );
   const [pickerOpen, setPickerOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const requestDishIds = useMemo(() => dishIdsFromRequests(requests), [requests]);
 
   useEffect(() => {
-    setSelected(menu.map((item) => item.dish_id));
-  }, [menu, version]);
+    const menuIds = dishIdsFromMenu(menu);
+    if (menuIds.length > 0) {
+      setSelected(menuIds);
+      return;
+    }
+    setSelected(requestDishIds);
+  }, [menu, version, requestDishIds]);
 
   useEffect(() => {
     onSelectionChange?.(selected);
@@ -76,7 +103,11 @@ export function MenuEditor({
           确认菜单
         </h3>
         {selected.length === 0 ? (
-          <p className="page__lead">从想吃清单或菜品库添加要确认的菜品。</p>
+          <p className="page__lead">
+            {requests.length > 0
+              ? "想吃清单里有菜，点「采用想吃清单」或从菜品库勾选后加入确认。"
+              : "从想吃清单或菜品库添加要确认的菜品。"}
+          </p>
         ) : (
           <ol className="menu-list">
             {selected.map((dishId, index) => (
@@ -117,6 +148,17 @@ export function MenuEditor({
           </ol>
         )}
 
+        {requests.length > 0 && selected.length === 0 ? (
+          <button
+            type="button"
+            className="btn--soft"
+            style={{ width: "100%", marginTop: "0.75rem" }}
+            onClick={() => updateSelected(dishIdsFromRequests(requests))}
+          >
+            采用想吃清单（{requests.length} 道）
+          </button>
+        ) : null}
+
         <button
           type="button"
           className="btn--ghost"
@@ -127,18 +169,16 @@ export function MenuEditor({
         </button>
 
         {pickerOpen ? (
-          <ul style={{ listStyle: "none", padding: 0, margin: "0.75rem 0 0" }}>
+          <ul className="menu-picker-list">
             {dishOptions.map((dish) => (
-              <li key={dish.id} style={{ marginBottom: "0.35rem" }}>
-                <label style={{ flexDirection: "row", alignItems: "center" }}>
+              <li className="menu-picker-list__item" key={dish.id}>
+                <label className="menu-picker-list__label">
                   <input
                     type="checkbox"
                     checked={selected.includes(dish.id)}
                     onChange={() => togglePick(dish.id)}
                   />
-                  <span style={{ color: "var(--color-ink)", fontWeight: 600 }}>
-                    {dish.name}
-                  </span>
+                  <span>{dish.name}</span>
                 </label>
               </li>
             ))}
