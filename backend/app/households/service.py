@@ -88,7 +88,7 @@ async def create_household_and_owner(
     household = Household(
         name=name,
         timezone=timezone_name,
-        invite_code_hash=hash_secret(invite_code),
+        invite_code=invite_code,
     )
     db.add(household)
     await db.flush()
@@ -106,7 +106,7 @@ async def create_household_and_owner(
 
 async def household_for_invite(db: AsyncSession, invite_code: str) -> Household | None:
     return await db.scalar(
-        select(Household).where(Household.invite_code_hash == hash_secret(invite_code))
+        select(Household).where(Household.invite_code == invite_code.upper())
     )
 
 

@@ -7,7 +7,7 @@ import { useToast } from "../../ui/Toast";
 import { createHousehold, joinHousehold } from "./api";
 
 interface OnboardingPageProps {
-  onAuthenticated: (inviteCode?: string) => void | Promise<void>;
+  onAuthenticated: () => void | Promise<void>;
 }
 
 type Mode = "create" | "join";
@@ -36,7 +36,7 @@ export function OnboardingPage({ onAuthenticated }: OnboardingPageProps) {
         timezone: String(data.get("timezone")),
       });
       setInviteCode(result.invite_code);
-      await onAuthenticated(result.invite_code);
+      await onAuthenticated();
       toast("家庭已创建");
     } catch (caught) {
       setError(errorMessage(caught));

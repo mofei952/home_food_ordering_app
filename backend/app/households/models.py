@@ -25,9 +25,7 @@ class Household(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
 
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     timezone: Mapped[str] = mapped_column(String(64), nullable=False)
-    invite_code_hash: Mapped[str] = mapped_column(
-        String(64), nullable=False, unique=True
-    )
+    invite_code: Mapped[str] = mapped_column(String(8), nullable=False, unique=True)
     members: Mapped[list["Member"]] = relationship(
         back_populates="household", cascade="all, delete-orphan"
     )

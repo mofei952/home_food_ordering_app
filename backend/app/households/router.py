@@ -147,6 +147,7 @@ async def get_current_session(
         household=HouseholdSummary.model_validate(auth.household),
         member=MemberSummary.model_validate(auth.member),
         members=[MemberSummary.model_validate(member) for member in members],
+        invite_code=auth.household.invite_code,
     )
 
 
@@ -177,7 +178,7 @@ async def rotate_invite(
 ) -> RotateInviteResponse:
     require_owner(auth)
     invite_code = generate_invite_code()
-    auth.household.invite_code_hash = hash_secret(invite_code)
+    auth.household.invite_code = invite_code
     await db.commit()
     return RotateInviteResponse(invite_code=invite_code)
 

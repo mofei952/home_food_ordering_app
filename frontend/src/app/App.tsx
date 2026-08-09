@@ -15,16 +15,14 @@ import { AppShell } from "./AppShell";
 
 export function App() {
   const [session, setSession] = useState<SessionResponse | null>();
-  const [inviteCode, setInviteCode] = useState<string>();
   const [error, setError] = useState<string>();
 
-  async function loadSession(newInviteCode?: string) {
+  async function loadSession() {
     setError(undefined);
     setSession(undefined);
     try {
       const current = await getSession();
       setSession(current);
-      setInviteCode(newInviteCode);
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 401) {
         setSession(null);
@@ -48,7 +46,7 @@ export function App() {
         <p className="alert-inline" role="alert" aria-label={error}>
           {error}
         </p>
-        <button type="button" onClick={() => void loadSession(inviteCode)}>
+        <button type="button" onClick={() => void loadSession()}>
           重试
         </button>
       </div>
@@ -67,7 +65,7 @@ export function App() {
   if (session === null) {
     return (
       <div className="auth-viewport">
-        <OnboardingPage onAuthenticated={loadSession} />
+        <OnboardingPage onAuthenticated={() => void loadSession()} />
       </div>
     );
   }
@@ -90,7 +88,9 @@ export function App() {
           element={
             <FamilyPage
               session={session}
-              initialInviteCode={inviteCode}
+              onInviteRotated={(inviteCode) =>
+                setSession({ ...session, invite_code: inviteCode })
+              }
               onLoggedOut={() => setSession(null)}
             />
           }

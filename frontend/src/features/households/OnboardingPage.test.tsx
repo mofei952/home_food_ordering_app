@@ -34,7 +34,7 @@ describe("OnboardingPage", () => {
     expect(within(joinForm).getByRole("button", { name: "加入家庭" })).toBeVisible();
   });
 
-  it("creates a household and reveals the one-time invite code", async () => {
+  it("creates a household and reveals the invite code", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -93,14 +93,16 @@ describe("FamilyPage", () => {
       { id: "m1", nickname: "小林", role: "owner" as const, status: "active" as const },
       { id: "m2", nickname: "小周", role: "member" as const, status: "active" as const },
     ],
+    invite_code: "ABCDEFGH",
   };
 
-  it("shows household members, current role, and owner invite controls", () => {
+  it("shows household members, current invite code, and owner invite controls", () => {
     render(
       <ToastProvider>
         <FamilyPage session={session} onLoggedOut={vi.fn()} />
       </ToastProvider>,
     );
+    expect(screen.getByTestId("invite-code")).toHaveTextContent("ABCDEFGH");
     expect(screen.getByRole("button", { name: "刷新邀请码" })).toBeVisible();
   });
 });
