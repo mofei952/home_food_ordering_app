@@ -24,3 +24,6 @@ services:
   caddy:
     ports: !override
       - "${PUBLIC_PORT:-18080}:80"
+  frontend:
+    security_opt:
+      - seccomp:unconfined
