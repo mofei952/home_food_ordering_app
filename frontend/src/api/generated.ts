@@ -836,6 +836,8 @@ export interface components {
             member: components["schemas"]["MemberSummary"];
             /** Members */
             members: components["schemas"]["MemberSummary"][];
+            /** Invite Code */
+            invite_code: string;
         };
         /** UpdatedBySummary */
         UpdatedBySummary: {

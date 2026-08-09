@@ -83,6 +83,7 @@ class CreateHouseholdResponse(AuthResponse):
 
 class SessionResponse(AuthResponse):
     members: list[MemberSummary]
+    invite_code: str
 
 
 class RotateInviteResponse(BaseModel):

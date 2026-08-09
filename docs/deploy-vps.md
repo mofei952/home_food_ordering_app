@@ -19,14 +19,23 @@
 1. 云安全组 / 防火墙放行：**TCP 18080**（以及你 SSH 用的 22）
 2. 服务器可执行 `docker compose`
 3. 本机或服务器具备仓库代码
-4. 若由 Cursor Cloud Agent 代部署：把 Agent 公钥写入服务器 `authorized_keys`（用户名按你机器调整）：
+
+### Cloud Agent 一次配置（推荐，之后无需再加公钥）
+
+Cloud Agent 每次是新环境，临时生成的公钥不能复用。改为配置一把**固定部署密钥**：
+
+1. 在 Cursor 环境密钥中添加：
+   - `VPS_SSH_PRIVATE_KEY`：固定私钥全文（含 `BEGIN/END` 行）
+   - 可选 `VPS_SSH_USER`：SSH 用户名（默认 `root`）
+2. 在测试机上**只执行一次**，写入对应公钥：
 
 ```bash
-# 在云服务器上执行
 mkdir -p ~/.ssh && chmod 700 ~/.ssh
-echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAcsSVSY8GNk+O2Aae76KKFFXsx+Lx4qrzmH8d/lGz84 cursor-agent-family-menu-deploy' >> ~/.ssh/authorized_keys
+echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBzwvLiSqVItycqY3SULuJBAj4sOBzqTQq65G/auNXOH family-menu-vps-deploy-stable' >> ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 ```
+
+之后 Agent 会读取 `VPS_SSH_PRIVATE_KEY` 直接执行 `./scripts/remote-deploy-vps.sh`，不用再改测试机。
 
 **构建加速（阿里云推荐）**：`backend/Dockerfile` 默认走 [阿里云 PyPI](https://mirrors.aliyun.com/pypi/simple/)，`frontend/Dockerfile` 默认走 [npmmirror](https://registry.npmmirror.com)；`deploy-vps.sh` 会为 Docker Hub 配置 DaoCloud 镜像加速。海外机器如需官方源，可在 build 时传 `PIP_INDEX_URL` / `NPM_REGISTRY` build-arg 覆盖。
 

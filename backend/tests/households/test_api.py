@@ -608,7 +608,15 @@ def test_only_session_hash_is_stored(
     assert token_hash != raw_token
 
 
-def test_pin_and_invite_code_are_only_stored_as_hashes(
+def test_session_includes_current_invite_code(client: TestClient) -> None:
+    created = create_household(client)
+    invite_code = created.json()["invite_code"]
+    session = client.get("/api/session")
+    assert session.status_code == 200
+    assert session.json()["invite_code"] == invite_code
+
+
+def test_pin_is_only_stored_as_hash_while_invite_code_is_retrievable(
     client: TestClient, test_engine: AsyncEngine
 ) -> None:
     created = create_household(client)
@@ -616,15 +624,14 @@ def test_pin_and_invite_code_are_only_stored_as_hashes(
 
     async def stored_secrets() -> tuple[str, str]:
         async with AsyncSession(test_engine) as db:
-            invite_hash = await db.scalar(select(Household.invite_code_hash))
+            stored_invite = await db.scalar(select(Household.invite_code))
             pin_hash = await db.scalar(select(Member.pin_hash))
-            assert invite_hash is not None
+            assert stored_invite is not None
             assert pin_hash is not None
-            return invite_hash, pin_hash
+            return stored_invite, pin_hash
 
-    invite_hash, pin_hash = asyncio.run(stored_secrets())
-    assert invite_hash == hash_secret(invite_code)
-    assert invite_code not in invite_hash
+    stored_invite, pin_hash = asyncio.run(stored_secrets())
+    assert stored_invite == invite_code
     assert pin_hash != "1234"
     assert "1234" not in pin_hash
 

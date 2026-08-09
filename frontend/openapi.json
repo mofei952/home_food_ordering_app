@@ -2402,13 +2402,18 @@
             },
             "type": "array",
             "title": "Members"
+          },
+          "invite_code": {
+            "type": "string",
+            "title": "Invite Code"
           }
         },
         "type": "object",
         "required": [
           "household",
           "member",
-          "members"
+          "members",
+          "invite_code"
         ],
         "title": "SessionResponse"
       },
