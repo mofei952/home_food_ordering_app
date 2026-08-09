@@ -1,0 +1,26 @@
+# 云主机长期部署覆盖层（与 compose.yaml 叠加使用）
+# 目标：避开常见占用端口（如本机 New API :3000），且不把 DB/MinIO 直接暴露公网。
+#
+# 用法：
+#   PUBLIC_HOST=139.196.83.119 PUBLIC_PORT=18080 \
+#     docker compose -f compose.yaml -f compose.vps.yaml up -d --build
+services:
+  db:
+    ports: !override
+      - "127.0.0.1:15432:5432"
+  minio:
+    ports: !override
+      - "127.0.0.1:19000:9000"
+      - "127.0.0.1:19001:9001"
+  backend:
+    environment:
+      ENVIRONMENT: production
+      # 默认走公网 HTTP IP 访问；若前置 HTTPS 反代，请改 SECURE_COOKIES=true
+      SECURE_COOKIES: "false"
+      TRUSTED_PROXY_HEADERS: "true"
+      S3_ENDPOINT_URL: http://minio:9000
+      # 浏览器签名 URL 与站点同源（经 Caddy /family-menu/* 反代）
+      S3_PUBLIC_ENDPOINT_URL: ${PUBLIC_BASE_URL:-http://127.0.0.1:18080}
+  caddy:
+    ports: !override
+      - "${PUBLIC_PORT:-18080}:80"

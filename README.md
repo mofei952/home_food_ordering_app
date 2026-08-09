@@ -116,7 +116,26 @@ Backend 容器入口脚本会在启动 uvicorn 前执行 `alembic upgrade head`�
 
 脚本会构建前端、启动 MinIO + API + Caddy（`:8080`），并输出 `https://*.trycloudflare.com` 公网地址。数据在 `/tmp/family-menu-data`（SQLite + MinIO 本地目录）。
 
-注意：隧道域名在 `cloudflared` 重启后会变；Agent 关机后服务停止。长期生产请用自有域名、固定隧道或云主机 + `docker compose`（见 `scripts/deploy-public.sh`）。
+注意：隧道域名在 `cloudflared` 重启后会变；Agent 关机后服务停止。长期生产请用自有域名、固定隧道或云主机部署（见下方与 `docs/deploy-vps.md`）。
+
+## 云主机长期部署（推荐）
+
+默认目标：`http://139.196.83.119:18080`（端口可改，避开已占用的 `:3000` 等服务）。
+
+服务器上：
+
+```bash
+cd /opt/family-menu
+PUBLIC_HOST=139.196.83.119 PUBLIC_PORT=18080 ./scripts/deploy-vps.sh
+```
+
+本机已配置 SSH 时：
+
+```bash
+SSH_USER=root SSH_IDENTITY=~/.ssh/your_key ./scripts/remote-deploy-vps.sh
+```
+
+说明与运维命令见 [`docs/deploy-vps.md`](docs/deploy-vps.md)。临时隧道方案见 `scripts/deploy-public.sh` / `scripts/deploy-public-native.sh`。
 
 ## 测试与统一验收
 
