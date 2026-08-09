@@ -31,6 +31,7 @@ install_docker() {
   if ! sudo docker info >/dev/null 2>&1; then
     sudo service docker start 2>/dev/null || sudo systemctl start docker
   fi
+  configure_docker_mirror
 }
 
 configure_docker_mirror() {
