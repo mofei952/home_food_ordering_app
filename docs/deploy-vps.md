@@ -37,7 +37,16 @@ chmod 600 ~/.ssh/authorized_keys
 
 之后 Agent 会读取 `VPS_SSH_PRIVATE_KEY` 直接执行 `./scripts/remote-deploy-vps.sh`，不用再改测试机。
 
-**构建加速（阿里云推荐）**：`backend/Dockerfile` 默认走 [阿里云 PyPI](https://mirrors.aliyun.com/pypi/simple/)，`frontend/Dockerfile` 默认走 [npmmirror](https://registry.npmmirror.com)；`deploy-vps.sh` 会为 Docker Hub 配置 DaoCloud 镜像加速。海外机器如需官方源，可在 build 时传 `PIP_INDEX_URL` / `NPM_REGISTRY` build-arg 覆盖。
+**构建加速（阿里云推荐）**：`backend/Dockerfile` 默认走 [阿里云 PyPI](https://mirrors.aliyun.com/pypi/simple/)，并在 `uv sync` 前把 `uv.lock` 里的 `files.pythonhosted.org` 改写为 `mirrors.aliyun.com/pypi`（否则 `--frozen` 仍会直连海外 CDN）。`frontend/Dockerfile` 默认走 [npmmirror](https://registry.npmmirror.com)；`deploy-vps.sh` 会为 Docker Hub 配置 DaoCloud 镜像加速。海外机器如需官方源：
+
+```bash
+docker compose build \
+  --build-arg PIP_INDEX_URL=https://pypi.org/simple \
+  --build-arg UV_PACKAGE_MIRROR= \
+  backend
+```
+
+日常发版默认复用 Docker 层缓存；需要无缓存全量重建时：`NO_CACHE=1 ./scripts/deploy-vps.sh`。
 
 > 当前探测：该 IP 上 `:3000` 已有 New API；`:80/:8080` 等端口不可用。因此默认挂在 **18080**。
 

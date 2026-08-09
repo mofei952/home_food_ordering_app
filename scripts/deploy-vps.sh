@@ -139,7 +139,13 @@ PUBLIC_BASE_URL="${PUBLIC_BASE_URL:-http://${PUBLIC_HOST}:${PUBLIC_PORT}}"
 export PUBLIC_BASE_URL
 
 echo "使用国内 PyPI / npm 源构建镜像（见 backend/Dockerfile、frontend/Dockerfile）..."
-compose build --no-cache backend frontend
+# 默认走 Docker 层缓存；需要全量重建时：NO_CACHE=1 ./scripts/deploy-vps.sh
+BUILD_ARGS=(build backend frontend)
+if [[ "${NO_CACHE:-0}" == "1" ]]; then
+  BUILD_ARGS=(build --no-cache backend frontend)
+  echo "NO_CACHE=1：强制无缓存重建"
+fi
+compose "${BUILD_ARGS[@]}"
 compose up -d --remove-orphans
 wait_health
 install_systemd_unit
