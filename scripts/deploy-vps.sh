@@ -18,6 +18,7 @@ need_cmd() { command -v "$1" >/dev/null 2>&1; }
 
 install_docker() {
   if need_cmd docker && docker compose version >/dev/null 2>&1; then
+    configure_docker_mirror
     return 0
   fi
   echo "Installing Docker Engine + Compose plugin..."
@@ -30,6 +31,29 @@ install_docker() {
   if ! sudo docker info >/dev/null 2>&1; then
     sudo service docker start 2>/dev/null || sudo systemctl start docker
   fi
+}
+
+configure_docker_mirror() {
+  if [[ "${CONFIGURE_DOCKER_MIRROR:-1}" != "1" ]]; then
+    return 0
+  fi
+  local daemon=/etc/docker/daemon.json
+  if [[ -f "$daemon" ]] && grep -q 'registry-mirrors' "$daemon" 2>/dev/null; then
+    return 0
+  fi
+  echo "配置 Docker Hub 国内加速（DaoCloud）..."
+  sudo mkdir -p /etc/docker
+  sudo tee "$daemon" >/dev/null <<'EOF'
+{
+  "registry-mirrors": ["https://docker.m.daocloud.io"]
+}
+EOF
+  if need_cmd systemctl; then
+    sudo systemctl restart docker 2>/dev/null || true
+  else
+    sudo service docker restart 2>/dev/null || true
+  fi
+  sleep 2
 }
 
 write_env_file() {
@@ -113,7 +137,9 @@ set +a
 PUBLIC_BASE_URL="${PUBLIC_BASE_URL:-http://${PUBLIC_HOST}:${PUBLIC_PORT}}"
 export PUBLIC_BASE_URL
 
-compose up -d --build --remove-orphans
+echo "使用国内 PyPI / npm 源构建镜像（见 backend/Dockerfile、frontend/Dockerfile）..."
+compose build --no-cache backend frontend
+compose up -d --remove-orphans
 wait_health
 install_systemd_unit
 

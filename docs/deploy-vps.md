@@ -28,6 +28,8 @@ echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAcsSVSY8GNk+O2Aae76KKFFXsx+Lx4qrzmH8d
 chmod 600 ~/.ssh/authorized_keys
 ```
 
+**构建加速（阿里云推荐）**：`backend/Dockerfile` 默认走 [阿里云 PyPI](https://mirrors.aliyun.com/pypi/simple/)，`frontend/Dockerfile` 默认走 [npmmirror](https://registry.npmmirror.com)；`deploy-vps.sh` 会为 Docker Hub 配置 DaoCloud 镜像加速。海外机器如需官方源，可在 build 时传 `PIP_INDEX_URL` / `NPM_REGISTRY` build-arg 覆盖。
+
 > 当前探测：该 IP 上 `:3000` 已有 New API；`:80/:8080` 等端口不可用。因此默认挂在 **18080**。
 
 ## 方式 A：登录服务器一键部署
