@@ -75,6 +75,23 @@ def test_ingredient_match_hides_two_missing() -> None:
     assert result.missing == frozenset({"鸡蛋", "牛肉"})
 
 
+def test_ingredient_match_empty_required_is_ready() -> None:
+    """Dishes with no required ingredients are always ready."""
+    empty = match_ingredients(frozenset(), frozenset())
+    assert empty.visibility == "ready"
+    assert empty.missing == frozenset()
+
+    with_available = match_ingredients(frozenset(), frozenset({"番茄"}))
+    assert with_available.visibility == "ready"
+    assert with_available.missing == frozenset()
+
+
+def test_recency_weight_future_last_eaten_uses_recent_bucket() -> None:
+    """Negative day deltas (clock skew / TZ) stay in the most recent bucket."""
+    today = date(2026, 8, 10)
+    assert recency_weight(today + timedelta(days=1), today) == Decimal("0.2")
+
+
 def test_weighted_choice_is_repeatable() -> None:
     first = choose_weighted(CANDIDATES, random.Random(42))
     second = choose_weighted(CANDIDATES, random.Random(42))
@@ -84,3 +101,8 @@ def test_weighted_choice_is_repeatable() -> None:
 def test_weighted_choice_empty_raises() -> None:
     with pytest.raises(NoCandidatesError):
         choose_weighted([], random.Random(1))
+
+
+def test_weighted_choice_single_candidate() -> None:
+    only = CandidateDish(id="solo", weight=Decimal("0.01"))
+    assert choose_weighted([only], random.Random(0)).id == "solo"

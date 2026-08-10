@@ -113,4 +113,39 @@ describe("ValidationSummary", () => {
     );
     expect(screen.getAllByText("暂无").length).toBeGreaterThanOrEqual(2);
   });
+
+  it("rejects non-integer and negative check-in values without calling the API", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <ValidationSummary summary={summary} weekStart="2026-08-03" />,
+    );
+    const form = screen.getByRole("form", { name: "每周验证问卷" });
+
+    fireEvent.change(screen.getByLabelText(/实际家庭用餐数/), {
+      target: { value: "1.5" },
+    });
+    fireEvent.change(screen.getByLabelText(/线下反复讨论次数/), {
+      target: { value: "0" },
+    });
+    // submit() bypasses native step/min so we assert the React guard.
+    fireEvent.submit(form);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("请填写非负整数");
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText(/实际家庭用餐数/), {
+      target: { value: "-1" },
+    });
+    fireEvent.submit(form);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("请填写非负整数");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("shows loading copy when summary is null", () => {
+    render(<ValidationSummary summary={null} weekStart="2026-08-03" />);
+    expect(screen.getByText("正在加载验证指标…")).toBeVisible();
+  });
 });
