@@ -245,8 +245,6 @@ describe("TodayPage", () => {
     await screen.findByLabelText("餐次状态");
 
     fireEvent.click(screen.getByRole("button", { name: "确认菜单" }));
-    fireEvent.click(screen.getByRole("button", { name: "从菜品库添加" }));
-    fireEvent.click(screen.getByRole("checkbox", { name: "番茄炒蛋" }));
     fireEvent.click(screen.getByTestId("confirm-menu"));
 
     expect(

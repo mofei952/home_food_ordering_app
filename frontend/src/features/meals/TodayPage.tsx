@@ -244,6 +244,7 @@ export function TodayPage({ session }: TodayPageProps) {
           ) : (
             <MenuEditor
               menu={slot.menu}
+              requests={slot.requests}
               version={slot.version}
               dishOptions={dishOptions}
               confirmed={confirmed}
